@@ -28,7 +28,7 @@ export function VideoPlayer() {
       setStreamStatus('ao_vivo');
       setCurrentUrl(liveStreamUrl);
       setIsError(false);
-      
+
       // Reinicia verificação de timeout
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
@@ -51,7 +51,7 @@ export function VideoPlayer() {
       setIsError(true);
       setStreamStatus('gravado');
       setCurrentUrl(fallbackUrl);
-      
+
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     }
   };
@@ -63,10 +63,10 @@ export function VideoPlayer() {
 
   return (
     <div className="relative w-full max-w-5xl mx-auto aspect-video rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(14,75,119,0.5)] border border-white/10 group bg-black/50">
-      
+
       {/* Botão flutuante do Shopping */}
       <div className="absolute top-4 right-4 z-20">
-        <Link 
+        <Link
           href="/shopping"
           className="flex items-center gap-2 bg-gradient-to-r from-purple-600/90 to-pink-600/90 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg shadow-pink-500/20 transition-all duration-300 hover:scale-105 border border-white/20 backdrop-blur-md"
         >
@@ -110,6 +110,7 @@ export function VideoPlayer() {
       {/* Player Wrapper */}
       <div className="w-full h-full relative z-10 pointer-events-auto">
         <ReactPlayer
+          // @ts-ignore
           url={currentUrl}
           width="100%"
           height="100%"
@@ -138,12 +139,12 @@ export function VideoPlayer() {
               </span>
               Enquete Interativa
             </h3>
-            
+
             <p className="text-white text-2xl font-bold leading-snug mb-8">{pollData.question}</p>
-            
+
             <div className="space-y-3">
               {pollData.options.map((option, idx) => (
-                <button 
+                <button
                   key={idx}
                   onClick={() => setHasVotedPollId(pollData.id)}
                   className="w-full bg-[#0e4b77]/40 hover:bg-[#00f0ff] hover:text-[#051622] border border-[#0e4b77] hover:border-[#00f0ff] text-white py-3 px-6 rounded-xl font-semibold transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] hover:scale-[1.02]"
