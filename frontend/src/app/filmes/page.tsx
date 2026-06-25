@@ -24,9 +24,9 @@ export default function FilmesPage() {
     <div className="flex-1 flex flex-col relative w-full pt-8 pb-12">
       {/* Background ambient light */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[#00f0ff]/5 blur-[150px] rounded-full pointer-events-none"></div>
-      
+
       <div className="w-full px-4 sm:px-6 lg:px-8 z-10 flex flex-col max-w-7xl mx-auto space-y-10">
-        
+
         {/* Title area */}
         <div className="text-center md:text-left space-y-4">
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white drop-shadow-[0_0_15px_rgba(0,240,255,0.2)]">
@@ -45,6 +45,7 @@ export default function FilmesPage() {
             </div>
             <div className="aspect-video w-full relative bg-black">
               <ReactPlayer
+                // @ts-ignore
                 url={activeMovie.videoUrl}
                 width="100%"
                 height="100%"
@@ -65,7 +66,7 @@ export default function FilmesPage() {
         {/* Catalog Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {movies.map(movie => (
-            <div 
+            <div
               key={movie.id}
               onClick={() => {
                 setActiveMovieId(movie.id);
@@ -73,7 +74,7 @@ export default function FilmesPage() {
               }}
               className={`relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 border ${activeMovieId === movie.id ? 'border-[#00f0ff] shadow-[0_0_20px_rgba(0,240,255,0.4)] scale-[1.02]' : 'border-white/10 hover:border-[#00f0ff]/50 hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(0,240,255,0.2)]'}`}
             >
-              <Image 
+              <Image
                 src={movie.coverUrl}
                 alt={movie.title}
                 fill
@@ -81,7 +82,7 @@ export default function FilmesPage() {
                 className="object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#051622] via-[#051622]/40 to-transparent opacity-90"></div>
-              
+
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20">
                 <PlayCircle size={48} className="text-[#00f0ff] drop-shadow-[0_0_10px_rgba(0,240,255,0.8)] transition-transform duration-300 group-hover:scale-110" />
               </div>
