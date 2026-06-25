@@ -34,7 +34,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col pt-20">
         <AdminProvider>
           <Header />
-          <main className="flex-1 flex flex-col relative overflow-x-hidden">{children}</main>
+          <main className="flex-1 flex flex-col relative">{children}</main>
           <ChatSidebar />
           <AdminPanel />
         </AdminProvider>
