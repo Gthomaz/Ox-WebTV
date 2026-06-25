@@ -31,9 +31,9 @@ export function Header() {
         {/* Left: Logo */}
         <div className="flex-shrink-0 flex items-center h-full py-2">
           <Link href="/">
-            <div className="relative h-14 w-40 sm:w-48">
+            <div className="relative h-16 w-44 sm:w-52 transition-transform hover:scale-105 duration-300">
               <Image 
-                src="/assets/Logo ox tv quissama.png" 
+                src="/assets/Ox Tv Final Logo.png" 
                 alt="OX WebTV Logo" 
                 fill
                 className="object-contain object-left"

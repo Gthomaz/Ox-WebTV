@@ -1,7 +1,15 @@
+'use client';
+
+import React, { useEffect } from 'react';
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { ProgramSchedule } from "@/components/ProgramSchedule";
+import Link from "next/link";
 
 export default function Home() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="flex-1 flex flex-col relative w-full pt-8 pb-12">
       {/* Background ambient light */}
@@ -30,6 +38,9 @@ export default function Home() {
         </div>
 
       </div>
+
+      {/* Invisible Admin Gateway */}
+      <Link href="/admin" className="absolute bottom-2 right-2 w-[10px] h-[10px] bg-transparent opacity-0 z-50 cursor-default" title="Área Restrita" />
     </div>
   );
 }
