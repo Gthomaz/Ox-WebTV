@@ -33,8 +33,8 @@ export function Header() {
           <Link href="/">
             <div className="relative h-16 w-44 sm:w-52 transition-transform hover:scale-105 duration-300">
               <Image 
-                src="/assets/Ox Tv Final Logo.png" 
-                alt="OX WebTV Logo" 
+                src="/assets/Logo-ox-tv-quissama.png" 
+                alt="OX TV Quissamã Logo" 
                 fill
                 className="object-contain object-left"
                 priority
