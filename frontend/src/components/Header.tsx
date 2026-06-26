@@ -4,12 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Logo from '@/assets/Ox-Tv-Final-Logo.png';
-import { User, MessageSquare } from 'lucide-react';
-import { useAdmin } from '@/contexts/AdminContext';
 
 export function Header() {
   const [time, setTime] = useState<string>('');
-  const { setIsAdminOpen, isChatOpen, setIsChatOpen } = useAdmin();
 
   useEffect(() => {
     const updateClock = () => {
@@ -77,24 +74,6 @@ export function Header() {
               Filmes
             </Link>
           </nav>
-          
-          <div className="h-6 w-[1px] bg-white/20 hidden md:block"></div>
-
-          <button 
-            onClick={() => setIsChatOpen(!isChatOpen)}
-            className={`flex items-center justify-center h-10 px-4 rounded-full border transition-all duration-300 gap-2 ${isChatOpen ? 'border-[#00f0ff] text-[#00f0ff] bg-[#00f0ff]/10 shadow-[0_0_12px_rgba(0,240,255,0.4)]' : 'border-white/20 text-white/80 hover:text-white hover:border-[#00f0ff] bg-black/20 hover:bg-black/40'}`}
-          >
-            <MessageSquare size={16} />
-            <span className="hidden md:inline text-sm font-medium">Chat</span>
-          </button>
-
-          <button 
-            onClick={() => setIsAdminOpen(true)}
-            className="flex items-center justify-center h-10 w-10 rounded-full border border-white/20 text-white/80 hover:text-white hover:border-[#00f0ff] hover:shadow-[0_0_12px_rgba(0,240,255,0.4)] transition-all duration-300 bg-black/20 hover:bg-black/40 cursor-pointer"
-            aria-label="Backoffice"
-          >
-            <User size={18} />
-          </button>
         </div>
 
       </div>

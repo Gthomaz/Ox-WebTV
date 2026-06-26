@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Header } from "@/components/Header";
 import { AdminProvider } from "@/contexts/AdminContext";
-import { AdminPanel } from "@/components/AdminPanel";
-import { ChatSidebar } from "@/components/ChatSidebar";
+import { Footer } from "@/components/Footer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,8 +34,7 @@ export default function RootLayout({
         <AdminProvider>
           <Header />
           <main className="flex-1 flex flex-col relative">{children}</main>
-          <ChatSidebar />
-          <AdminPanel />
+          <Footer />
         </AdminProvider>
       </body>
     </html>

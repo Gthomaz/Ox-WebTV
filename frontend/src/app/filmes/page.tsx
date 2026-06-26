@@ -2,15 +2,31 @@
 
 import React, { useState, useEffect } from 'react';
 import ReactPlayer from 'react-player';
-import { useAdmin } from '@/contexts/AdminContext';
 import Image from 'next/image';
 import { PlayCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+
+interface Movie {
+  id: number;
+  title: string;
+  cover_url: string;
+  description: string;
+  video_url: string;
+}
 
 export default function FilmesPage() {
-  const { movies } = useAdmin();
-  const [activeMovieId, setActiveMovieId] = useState<string | null>(null);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [activeMovieId, setActiveMovieId] = useState<number | null>(null);
 
   const activeMovie = movies.find(m => m.id === activeMovieId);
+
+  useEffect(() => {
+    const fetchMovies = async () => {
+      const { data } = await supabase.from('filmes').select('*').order('id', { ascending: false });
+      if (data) setMovies(data);
+    };
+    fetchMovies();
+  }, []);
 
   // Client-side Hydration handling for avoiding mismatches
   const [mounted, setMounted] = useState(false);
@@ -46,7 +62,7 @@ export default function FilmesPage() {
             <div className="aspect-video w-full relative bg-black">
               <ReactPlayer
                 // @ts-ignore
-                url={activeMovie.videoUrl}
+                url={activeMovie.video_url}
                 width="100%"
                 height="100%"
                 playing={true}
@@ -64,31 +80,41 @@ export default function FilmesPage() {
         )}
 
         {/* Catalog Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 [perspective:1000px]">
           {movies.map(movie => (
             <div
               key={movie.id}
-              onClick={() => {
-                setActiveMovieId(movie.id);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className={`relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 border ${activeMovieId === movie.id ? 'border-[#00f0ff] shadow-[0_0_20px_rgba(0,240,255,0.4)] scale-[1.02]' : 'border-white/10 hover:border-[#00f0ff]/50 hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(0,240,255,0.2)]'}`}
+              className={`relative aspect-[2/3] rounded-xl cursor-pointer group transition-all duration-700 [transform-style:preserve-3d] hover:[transform:rotateY(180deg)] ${activeMovieId === movie.id ? 'shadow-[0_0_20px_rgba(0,240,255,0.4)] scale-[1.02]' : 'hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(0,240,255,0.2)]'}`}
             >
-              <Image
-                src={movie.coverUrl}
-                alt={movie.title}
-                fill
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
-                className="object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#051622] via-[#051622]/40 to-transparent opacity-90"></div>
-
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20">
-                <PlayCircle size={48} className="text-[#00f0ff] drop-shadow-[0_0_10px_rgba(0,240,255,0.8)] transition-transform duration-300 group-hover:scale-110" />
+              {/* Frente do Card */}
+              <div className="absolute inset-0 [backface-visibility:hidden] rounded-xl overflow-hidden border border-white/10">
+                <Image
+                  src={movie.cover_url}
+                  alt={movie.title}
+                  fill
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#051622] via-[#051622]/40 to-transparent opacity-90"></div>
+                <div className="absolute bottom-0 left-0 w-full p-4 pointer-events-none">
+                  <h3 className="text-white font-bold text-lg line-clamp-2 leading-tight drop-shadow-md">{movie.title}</h3>
+                </div>
               </div>
 
-              <div className="absolute bottom-0 left-0 w-full p-4 pointer-events-none">
-                <h3 className="text-white font-bold text-lg line-clamp-2 leading-tight drop-shadow-md">{movie.title}</h3>
+              {/* Verso do Card */}
+              <div 
+                onClick={() => {
+                  setActiveMovieId(movie.id);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="absolute inset-0 h-full w-full rounded-xl bg-gradient-to-br from-[#0e4b77] to-[#051622] border border-[#00f0ff]/30 p-4 [transform:rotateY(180deg)] [backface-visibility:hidden] flex flex-col items-center justify-center text-center overflow-hidden"
+              >
+                <h3 className="text-white font-bold text-lg mb-2">{movie.title}</h3>
+                <p className="text-white/70 text-sm line-clamp-5 mb-4">{movie.description}</p>
+                <button className="flex items-center gap-2 bg-[#00f0ff]/20 hover:bg-[#00f0ff]/40 border border-[#00f0ff] text-white px-4 py-2 rounded-full transition-colors">
+                  <PlayCircle size={18} />
+                  Assistir
+                </button>
               </div>
             </div>
           ))}

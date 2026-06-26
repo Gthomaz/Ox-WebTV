@@ -16,6 +16,16 @@ interface Program {
   url: string;
   start_time: string;
   sort_order: number;
+  thumbnail_url?: string;
+  description?: string;
+}
+
+interface Movie {
+  id: number;
+  title: string;
+  cover_url: string;
+  description: string;
+  video_url: string;
 }
 
 function SortableItem({ id, program, onRemove }: { id: number, program: Program, onRemove: (id: number) => void }) {
@@ -77,7 +87,17 @@ export default function AdminPage() {
   const [newTitle, setNewTitle] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [newStartTime, setNewStartTime] = useState('');
+  const [newThumbnail, setNewThumbnail] = useState('');
+  const [newDesc, setNewDesc] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+
+  // Movies States
+  const [moviesList, setMoviesList] = useState<Movie[]>([]);
+  const [newMovieTitle, setNewMovieTitle] = useState('');
+  const [newMovieCover, setNewMovieCover] = useState('');
+  const [newMovieDesc, setNewMovieDesc] = useState('');
+  const [newMovieVideo, setNewMovieVideo] = useState('');
+  const [isAddingMovie, setIsAddingMovie] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -90,6 +110,7 @@ export default function AdminPage() {
       setIsAuthenticated(true);
       fetchCurrentSettings();
       fetchPrograms();
+      fetchMovies();
     } else {
       alert('Credenciais incorretas');
     }
@@ -116,6 +137,12 @@ export default function AdminPage() {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     const { data } = await supabase.from('programacao').select('*').order('sort_order', { ascending: true });
     if (data) setPrograms(data);
+  };
+
+  const fetchMovies = async () => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    const { data } = await supabase.from('filmes').select('*').order('id', { ascending: false });
+    if (data) setMoviesList(data);
   };
 
   const handleSaveControl = async (e?: React.FormEvent) => {
@@ -161,12 +188,19 @@ export default function AdminPage() {
     const maxSort = programs.length > 0 ? Math.max(...programs.map(p => p.sort_order)) : 0;
 
     const { error } = await supabase.from('programacao').insert([
-      { title: newTitle, url: newUrl, start_time: newStartTime, sort_order: maxSort + 1 }
+      { 
+        title: newTitle, 
+        url: newUrl, 
+        start_time: newStartTime, 
+        sort_order: maxSort + 1,
+        thumbnail_url: newThumbnail,
+        description: newDesc
+      }
     ]);
 
     setIsAdding(false);
     if (!error) {
-      setNewTitle(''); setNewUrl(''); setNewStartTime('');
+      setNewTitle(''); setNewUrl(''); setNewStartTime(''); setNewThumbnail(''); setNewDesc('');
       fetchPrograms();
     } else {
       alert('Erro ao adicionar: ' + error.message);
@@ -176,6 +210,28 @@ export default function AdminPage() {
   const handleRemoveProgram = async (id: number) => {
     const { error } = await supabase.from('programacao').delete().eq('id', id);
     if (!error) fetchPrograms();
+  };
+
+  const handleAddMovie = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAddingMovie(true);
+
+    const { error } = await supabase.from('filmes').insert([
+      { title: newMovieTitle, cover_url: newMovieCover, description: newMovieDesc, video_url: newMovieVideo }
+    ]);
+
+    setIsAddingMovie(false);
+    if (!error) {
+      setNewMovieTitle(''); setNewMovieCover(''); setNewMovieDesc(''); setNewMovieVideo('');
+      fetchMovies();
+    } else {
+      alert('Erro ao adicionar filme: ' + error.message);
+    }
+  };
+
+  const handleRemoveMovie = async (id: number) => {
+    const { error } = await supabase.from('filmes').delete().eq('id', id);
+    if (!error) fetchMovies();
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -287,12 +343,56 @@ export default function AdminPage() {
           <div className="mt-4 pt-4 border-t border-white/10">
             <form onSubmit={handleAddProgram} className="space-y-3">
               <input type="text" placeholder="Título (Ex: Noticiário)" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
+              <input type="text" placeholder="Sinopse / Descrição Curta" value={newDesc} onChange={e => setNewDesc(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
               <div className="grid grid-cols-2 gap-3">
                 <input type="datetime-local" value={newStartTime} onChange={e => setNewStartTime(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm [color-scheme:dark]" />
                 <input type="url" placeholder="URL do Vídeo" value={newUrl} onChange={e => setNewUrl(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
               </div>
+              <input type="url" placeholder="URL da Miniatura (Thumbnail)" value={newThumbnail} onChange={e => setNewThumbnail(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
               <button type="submit" disabled={isAdding} className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 py-2 rounded-lg text-sm transition-all">
                 <Plus size={16} /> Adicionar à Fila
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* MÓDULO DE FILMES */}
+        <div className="lg:col-span-5 bg-[#051622] rounded-2xl border border-white/10 p-6 flex flex-col h-[75vh]">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2 border-b border-white/10 pb-4 mb-4">
+            <ImageIcon className="text-[#00f0ff]" size={20} />
+            Catálogo de Filmes
+          </h2>
+          
+          <div className="flex-1 overflow-y-auto pr-2 space-y-3" style={{ scrollbarWidth: 'thin' }}>
+            {moviesList.map((movie) => (
+              <div key={movie.id} className="flex items-center justify-between p-3 bg-[#0a1a2a] border border-white/5 rounded-xl gap-4">
+                <div className="flex items-center gap-3">
+                  <img src={movie.cover_url} alt={movie.title} className="w-12 h-16 object-cover rounded-md bg-black" />
+                  <div>
+                    <h4 className="text-white font-medium text-sm">{movie.title}</h4>
+                    <span className="text-xs text-white/50 line-clamp-1">{movie.description}</span>
+                  </div>
+                </div>
+                <button onClick={() => handleRemoveMovie(movie.id)} className="text-red-500 hover:text-white p-2 rounded-lg hover:bg-red-500/20 transition-all">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            {moviesList.length === 0 && (
+              <p className="text-white/40 text-center text-sm py-10">Nenhum filme cadastrado.</p>
+            )}
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <form onSubmit={handleAddMovie} className="space-y-3">
+              <input type="text" placeholder="Título do Filme" value={newMovieTitle} onChange={e => setNewMovieTitle(e.target.value)} required className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
+              <input type="text" placeholder="Sinopse" value={newMovieDesc} onChange={e => setNewMovieDesc(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
+              <div className="grid grid-cols-2 gap-3">
+                <input type="url" placeholder="URL da Capa" value={newMovieCover} onChange={e => setNewMovieCover(e.target.value)} required className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
+                <input type="url" placeholder="URL do Vídeo" value={newMovieVideo} onChange={e => setNewMovieVideo(e.target.value)} required className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
+              </div>
+              <button type="submit" disabled={isAddingMovie} className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 py-2 rounded-lg text-sm transition-all">
+                <Plus size={16} /> Adicionar Filme
               </button>
             </form>
           </div>
