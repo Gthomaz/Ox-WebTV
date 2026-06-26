@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Logo from '@/assets/Ox-Tv-Final-Logo.png';
-import { Lock, Radio, Save, CheckCircle2, Plus, Trash2, CalendarClock, GripVertical, Image as ImageIcon, MessageSquare, AlertCircle } from 'lucide-react';
+import { Lock, Radio, Save, CheckCircle2, Plus, Trash2, CalendarClock, GripVertical, Image as ImageIcon, MessageSquare, AlertCircle, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -49,6 +50,7 @@ function SortableItem({ id, program, onRemove }: { id: number, program: Program,
 }
 
 export default function AdminPage() {
+  const router = useRouter();
   const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -238,10 +240,19 @@ export default function AdminPage() {
           <h1 className="text-3xl font-bold text-white tracking-tight">Master Control Room</h1>
           <p className="text-[#00f0ff]">Gerenciamento de Estação de TV em Tempo Real</p>
         </div>
-        <button onClick={() => handleSaveControl()} disabled={isSaving} className="w-full md:w-auto bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-lg shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all flex items-center justify-center gap-2">
-          <Save size={20} />
-          {isSaving ? 'Aplicando...' : 'Aplicar Interatividade (No Ar)'}
-        </button>
+        <div className="flex w-full md:w-auto gap-4">
+          <button 
+            onClick={() => router.push('/')} 
+            className="flex-1 md:flex-none bg-white/5 hover:bg-white/10 text-white font-bold py-3 px-6 rounded-lg border border-white/10 transition-all flex items-center justify-center gap-2"
+          >
+            <LogOut size={20} />
+            Sair
+          </button>
+          <button onClick={() => handleSaveControl()} disabled={isSaving} className="flex-1 md:flex-none bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-lg shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all flex items-center justify-center gap-2">
+            <Save size={20} />
+            {isSaving ? 'Aplicando...' : 'Aplicar Interatividade (No Ar)'}
+          </button>
+        </div>
       </div>
 
       {successMsg && (
