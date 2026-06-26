@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { VideoPlayer } from "@/components/VideoPlayer";
+import VideoPlayer from "@/components/VideoPlayer";
 import { ProgramSchedule } from "@/components/ProgramSchedule";
 import Link from "next/link";
 
@@ -29,7 +29,7 @@ export default function Home() {
 
         {/* Main Player Component */}
         <div className="w-full">
-          <VideoPlayer />
+          <VideoPlayer url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" />
         </div>
 
         {/* Schedule Component */}
