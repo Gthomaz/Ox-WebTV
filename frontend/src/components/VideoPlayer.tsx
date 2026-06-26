@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
+import Logo from '@/assets/Ox-Tv-Final-Logo.png';
 
 export default function VideoPlayer() {
   const [url, setUrl] = useState<string>('');
@@ -102,12 +104,16 @@ export default function VideoPlayer() {
       </video>
 
       {/* Watermark Dinâmico */}
-      {watermarkUrl && (
+      {(watermarkUrl || Logo) && (
         <div 
           className={`absolute z-10 pointer-events-none transition-opacity duration-300 ${getWatermarkClasses()}`}
           style={{ opacity: watermarkOpacity }}
         >
-          <img src={watermarkUrl} alt="Watermark" className="h-12 w-auto object-contain drop-shadow-md" />
+          {watermarkUrl ? (
+            <img src={watermarkUrl} alt="Watermark" className="h-12 w-auto object-contain drop-shadow-md" />
+          ) : (
+            <Image src={Logo} alt="Watermark" className="h-12 w-auto object-contain drop-shadow-md" />
+          )}
         </div>
       )}
 
