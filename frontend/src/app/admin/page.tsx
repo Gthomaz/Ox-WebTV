@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Logo from '@/assets/Ox-Tv-Final-Logo.png';
 import { Lock, Radio, Save, CheckCircle2, Plus, Trash2, CalendarClock, GripVertical, Image as ImageIcon, MessageSquare, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -205,7 +207,19 @@ export default function AdminPage() {
       <div className="flex-1 flex items-center justify-center pt-20 px-4 pb-12">
         <form onSubmit={handleLogin} className="bg-[#051622] p-8 rounded-2xl border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)] w-full max-w-sm">
           <div className="flex flex-col items-center mb-6">
-            <Lock className="text-[#00f0ff] mb-2" size={32} />
+            <div 
+              className="relative h-20 w-56 mb-4"
+              style={{ background: 'transparent' }}
+            >
+              <Image 
+                src={Logo} 
+                alt="OX TV Quissamã Logo" 
+                fill
+                className="object-contain object-center"
+                style={{ background: 'transparent' }}
+                priority
+              />
+            </div>
             <h2 className="text-xl font-bold text-white">Acesso Restrito</h2>
           </div>
           <input type="text" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white mb-4" />
@@ -330,7 +344,7 @@ export default function AdminPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-xs text-white/50 mb-1 block">URL da Imagem da Logo (PNG transparente)</label>
-                <input type="text" placeholder="/assets/Logo-ox-tv-quissama.png" value={watermarkUrl} onChange={e => setWatermarkUrl(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-mono" />
+                <input type="text" placeholder="/assets/Ox-Tv-Final-Logo.png" value={watermarkUrl} onChange={e => setWatermarkUrl(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-mono" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

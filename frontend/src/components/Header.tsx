@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import Logo from '@/assets/Ox-Tv-Final-Logo.png';
 import { User, MessageSquare } from 'lucide-react';
 import { useAdmin } from '@/contexts/AdminContext';
 
@@ -27,16 +28,19 @@ export function Header() {
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-[#0e4b77]/40 backdrop-blur-[10px] border-b border-white/10">
       <div className="max-w-screen-2xl mx-auto px-4 h-20 flex items-center justify-between">
-        
         {/* Left: Logo */}
         <div className="flex-shrink-0 flex items-center h-full py-2">
           <Link href="/">
-            <div className="relative h-16 w-44 sm:w-52 transition-transform hover:scale-105 duration-300">
+            <div 
+              className="relative h-16 w-44 sm:w-52 transition-transform hover:scale-105 duration-300"
+              style={{ background: 'transparent' }}
+            >
               <Image 
-                src="/assets/Logo-ox-tv-quissama.png" 
+                src={Logo} 
                 alt="OX TV Quissamã Logo" 
                 fill
                 className="object-contain object-left"
+                style={{ background: 'transparent' }}
                 priority
               />
             </div>
