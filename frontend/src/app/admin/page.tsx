@@ -242,7 +242,7 @@ export default function AdminPage() {
       }, 300);
 
       const { data, error } = await supabase.storage
-        .from('videos')
+        .from('filmes')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -255,7 +255,7 @@ export default function AdminPage() {
       setUploadProgress(100);
 
       const { data: publicUrlData } = supabase.storage
-        .from('videos')
+        .from('filmes')
         .getPublicUrl(filePath);
 
       setNewMovieVideo(publicUrlData.publicUrl);
