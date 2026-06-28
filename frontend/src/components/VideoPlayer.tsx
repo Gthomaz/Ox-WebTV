@@ -24,6 +24,10 @@ export default function VideoPlayer() {
   const [isBuffering, setIsBuffering] = useState(true);
   const [playerErrorMsg, setPlayerErrorMsg] = useState<string>('');
 
+  // Refs for Playlist state
+  const currentIndexRef = useRef(0);
+  const programsListRef = useRef<any[]>([]);
+
   // New States from DB
   const [watermarkUrl, setWatermarkUrl] = useState<string>('');
   const [watermarkOpacity, setWatermarkOpacity] = useState<number>(1);
@@ -96,6 +100,19 @@ export default function VideoPlayer() {
     }
   }, [volume, muted, useNativeFallback]);
 
+  const playNextVideo = useCallback(() => {
+    if (isLive || programsListRef.current.length === 0) return;
+    
+    // Avança para o próximo (Loop infinito)
+    currentIndexRef.current = (currentIndexRef.current + 1) % programsListRef.current.length;
+    const nextProgram = programsListRef.current[currentIndexRef.current];
+    
+    setUrl(nextProgram.url);
+    setUseNativeFallback(!nextProgram.url.includes('.m3u8'));
+    setCurrentProgramTitle(nextProgram.title);
+    setPlayerErrorMsg('');
+  }, [isLive]);
+
   // Native Error Listener directly on DOM element
   useEffect(() => {
     const videoObj = nativeVideoRef.current;
@@ -121,8 +138,12 @@ export default function VideoPlayer() {
     };
 
     videoObj.addEventListener('error', handleError);
-    return () => videoObj.removeEventListener('error', handleError);
-  }, [url, useNativeFallback]);
+    videoObj.addEventListener('ended', playNextVideo);
+    return () => {
+      videoObj.removeEventListener('error', handleError);
+      videoObj.removeEventListener('ended', playNextVideo);
+    };
+  }, [url, useNativeFallback, playNextVideo]);
 
   useEffect(() => {
     const fetchStatusAndPrograms = async () => {
@@ -164,6 +185,7 @@ export default function VideoPlayer() {
   }, []);
 
   const updateState = (data: any, programs: any[]) => {
+    programsListRef.current = programs;
     setIsLive(data.is_live);
     let currentUrl = '';
     
@@ -177,7 +199,10 @@ export default function VideoPlayer() {
       if (data.current_video_id) {
         currentUrl = data.current_video_id;
       } else if (programs && programs.length > 0) {
-        currentUrl = programs[0].url;
+        if (currentIndexRef.current >= programs.length) {
+          currentIndexRef.current = 0;
+        }
+        currentUrl = programs[currentIndexRef.current].url;
       } else {
         currentUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
       }
@@ -269,6 +294,7 @@ export default function VideoPlayer() {
           onReady={() => setIsBuffering(false)}
           onStart={() => setIsBuffering(false)}
           onPlay={() => setIsBuffering(false)}
+          onEnded={playNextVideo}
           onError={(e: any) => {
             console.error("VideoPlayer Error - URL:", url, e);
             setPlayerErrorMsg(`ReactPlayer Error: Falha ao carregar HLS. Motivo: ${e?.type || e?.message || 'Media não suportada ou CORS.'} | URL: ${url}`);
