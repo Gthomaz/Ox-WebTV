@@ -44,6 +44,11 @@ export function ProgramSchedule() {
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatDate = (isoString: string) => {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
   return (
     <div className="w-full mt-2 mb-8">
       <div className="flex flex-col px-4 md:px-0 mb-3">
@@ -69,10 +74,13 @@ export function ProgramSchedule() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
               </div>
               <div className="relative z-10 p-4 h-[120px] flex flex-col justify-end">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center gap-1.5 text-[#00f0ff] font-mono text-xs bg-[#00f0ff]/10 px-2 py-1 rounded">
-                    <Clock size={14} />
-                    {formatTime(program.start_time)}
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex flex-col items-start gap-1">
+                    <span className="text-[10px] font-bold text-white/70 bg-black/50 px-1.5 py-0.5 rounded border border-white/5">{formatDate(program.start_time)}</span>
+                    <div className="flex items-center gap-1.5 text-[#00f0ff] font-mono text-xs bg-[#00f0ff]/10 px-2 py-1 rounded">
+                      <Clock size={14} />
+                      {formatTime(program.start_time)}
+                    </div>
                   </div>
                 </div>
                 <h3 className="text-base font-bold text-white leading-tight mb-1 line-clamp-1">{program.title}</h3>
@@ -103,12 +111,15 @@ export function ProgramSchedule() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
               </div>
               <div className="relative z-10 p-5 h-[160px] flex flex-col justify-end">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center gap-1.5 text-[#00f0ff] font-mono text-xs bg-[#00f0ff]/10 px-2 py-1 rounded">
-                    <Clock size={14} />
-                    {formatTime(program.start_time)}
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex flex-col items-start gap-1">
+                    <span className="text-[10px] font-bold text-white/70 bg-black/50 px-1.5 py-0.5 rounded border border-white/5">{formatDate(program.start_time)}</span>
+                    <div className="flex items-center gap-1.5 text-[#00f0ff] font-mono text-xs bg-[#00f0ff]/10 px-2 py-1 rounded">
+                      <Clock size={14} />
+                      {formatTime(program.start_time)}
+                    </div>
                   </div>
-                  <PlayCircle size={24} className="text-white/50 group-hover:text-[#00f0ff] transition-colors" />
+                  <PlayCircle size={24} className="text-white/50 group-hover:text-[#00f0ff] transition-colors mt-1" />
                 </div>
                 <h3 className="text-lg font-bold text-white leading-tight mb-1 line-clamp-1">{program.title}</h3>
                 {program.description && (
