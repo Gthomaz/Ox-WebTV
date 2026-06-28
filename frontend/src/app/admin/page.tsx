@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
-import { Lock, Radio, Save, CheckCircle2, Plus, Trash2, CalendarClock, GripVertical, Image as ImageIcon, MessageSquare, AlertCircle, LogOut, Upload, Film } from 'lucide-react';
+import { Lock, Radio, Save, CheckCircle2, Plus, Trash2, CalendarClock, GripVertical, Image as ImageIcon, MessageSquare, AlertCircle, LogOut, Upload, Film, MonitorPlay } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import VideoPlayer from '@/components/VideoPlayer';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -594,6 +595,26 @@ export default function AdminPage() {
         {/* LADO DIREITO: Módulos de Controle */}
         <div className="lg:col-span-7 flex flex-col gap-6 h-[75vh] overflow-y-auto pr-2" style={{ scrollbarWidth: 'none' }}>
           
+          {/* Módulo 0: Preview de Direção */}
+          <div className="bg-[#051622] rounded-2xl border border-white/10 p-4 relative">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <MonitorPlay className="text-[#00f0ff]" size={20} />
+                Preview de Direção (MCR)
+              </h2>
+              <div className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 bg-black/40 rounded-full border border-white/10">
+                <div className={`w-2.5 h-2.5 rounded-full ${isLive ? 'bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]'}`}></div>
+                <span className={isLive ? 'text-red-400 tracking-wider' : 'text-green-400 tracking-wider'}>{isLive ? 'SINAL AO VIVO' : 'SINAL VOD'}</span>
+              </div>
+            </div>
+            {/* O container interno do VideoPlayer limita o tamanho máximo para que caiba bem no painel */}
+            <div className="w-full max-w-2xl mx-auto rounded-xl overflow-hidden border border-white/5 shadow-2xl relative">
+              <VideoPlayer />
+              {/* Bloqueador de Interação: Opcional, mantido comentado se quisermos que o admin mude o volume. 
+                  Como é preview, vamos deixar a interação livre para o admin mutar se quiser. */}
+            </div>
+          </div>
+
           {/* Módulo 1: Player Master */}
           <div className="bg-[#051622] rounded-2xl border border-white/10 p-6">
             <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
