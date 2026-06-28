@@ -88,13 +88,12 @@ export function Header() {
 
       </div>
 
-      {/* Mobile Slider Menu */}
       <div 
         className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsMobileMenuOpen(false)}
       >
         <div 
-          className={`absolute top-0 right-0 w-64 h-full bg-[#020b14] border-l border-white/10 p-6 flex flex-col gap-8 shadow-2xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+          className={`absolute top-0 right-0 w-64 h-full bg-[#1e1e1e] border-l border-white/10 p-6 flex flex-col gap-8 shadow-2xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
           onClick={e => e.stopPropagation()}
         >
           <div className="flex justify-end">
