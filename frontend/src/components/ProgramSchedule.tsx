@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Clock, PlayCircle } from 'lucide-react';
-import Image from 'next/image';
 
 interface Program {
   id: number;
@@ -62,7 +61,7 @@ export function ProgramSchedule() {
               {/* Thumbnail Background */}
               <div className="absolute inset-0 z-0">
                 {program.thumbnail_url ? (
-                  <Image src={program.thumbnail_url} alt={program.title} fill className="object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
+                  <img src={program.thumbnail_url} alt={program.title} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-[#0e4b77] to-[#051622] opacity-80" />
                 )}
