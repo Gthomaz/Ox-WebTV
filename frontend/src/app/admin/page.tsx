@@ -331,9 +331,57 @@ export default function AdminPage() {
     }
   };
 
-  const handleRemoveMovie = async (id: number) => {
-    const { error } = await supabase.from('filmes').delete().eq('id', id);
-    if (!error) fetchMovies();
+  const handleRemoveMovie = async (movie: Movie) => {
+    try {
+      const getFilePathFromUrl = (url: string) => {
+        if (!url) return null;
+        const parts = url.split('/public/filmes/');
+        return parts.length > 1 ? parts[1] : null;
+      };
+
+      const coverPath = getFilePathFromUrl(movie.cover_url);
+      const videoPath = getFilePathFromUrl(movie.video_url);
+
+      const pathsToRemove = [];
+      if (coverPath) pathsToRemove.push(coverPath);
+      if (videoPath) pathsToRemove.push(videoPath);
+
+      if (pathsToRemove.length > 0) {
+        await supabase.storage.from('filmes').remove(pathsToRemove);
+      }
+
+      const { error } = await supabase.from('filmes').delete().eq('id', movie.id);
+      if (error) throw error;
+      
+      fetchMovies();
+    } catch (error: any) {
+      alert('Erro ao excluir filme: ' + error.message);
+    }
+  };
+
+  const handleAddMovieToSchedule = async (movie: Movie) => {
+    const maxSort = programs.length > 0 ? Math.max(...programs.map(p => p.sort_order)) : 0;
+    
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    const startTime = now.toISOString().slice(0, 16);
+    
+    const { error } = await supabase.from('programacao').insert([
+      { 
+        title: movie.title, 
+        url: movie.video_url, 
+        start_time: startTime, 
+        sort_order: maxSort + 1,
+        thumbnail_url: movie.cover_url,
+        description: movie.description
+      }
+    ]);
+
+    if (!error) {
+      fetchPrograms();
+    } else {
+      alert('Erro ao adicionar à grade: ' + error.message);
+    }
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -348,9 +396,13 @@ export default function AdminPage() {
         const updatePromises = newArray.map((item, index) => 
           supabase.from('programacao').update({ sort_order: index }).eq('id', item.id)
         );
-        Promise.all(updatePromises);
         
-        // Also update local state sort_order just in case
+        Promise.all(updatePromises).catch(err => {
+          console.error("Erro ao reordenar grade:", err);
+          alert("Falha ao salvar a nova ordem no banco de dados.");
+        });
+        
+        // Also update local state sort_order
         return newArray.map((item, index) => ({ ...item, sort_order: index }));
       });
     }
@@ -465,21 +517,39 @@ export default function AdminPage() {
             Catálogo de Filmes
           </h2>
           
-          <div className="flex-1 overflow-y-auto pr-2 space-y-3" style={{ scrollbarWidth: 'thin' }}>
-            {moviesList.map((movie) => (
-              <div key={movie.id} className="flex items-center justify-between p-3 bg-[#0a1a2a] border border-white/5 rounded-xl gap-4">
-                <div className="flex items-center gap-3">
-                  <img src={movie.cover_url} alt={movie.title} className="w-12 h-16 object-cover rounded-md bg-black" />
-                  <div>
-                    <h4 className="text-white font-medium text-sm">{movie.title}</h4>
-                    <span className="text-xs text-white/50 line-clamp-1">{movie.description}</span>
-                  </div>
-                </div>
-                <button onClick={() => handleRemoveMovie(movie.id)} className="text-red-500 hover:text-white p-2 rounded-lg hover:bg-red-500/20 transition-all">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
+          <div className="flex-1 overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/10 text-white/50 text-xs uppercase">
+                  <th className="pb-2 font-medium font-sans">Capa</th>
+                  <th className="pb-2 font-medium font-sans">Detalhes</th>
+                  <th className="pb-2 font-medium font-sans text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {moviesList.map((movie) => (
+                  <tr key={movie.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td className="py-3 pr-3 w-16">
+                      <img src={movie.cover_url} alt={movie.title} className="w-12 h-16 object-cover rounded-md bg-black shadow-sm" />
+                    </td>
+                    <td className="py-3 pr-3 align-top">
+                      <h4 className="text-white font-medium text-sm leading-tight mb-1">{movie.title}</h4>
+                      <p className="text-xs text-white/50 line-clamp-2 leading-relaxed">{movie.description}</p>
+                    </td>
+                    <td className="py-3 align-middle text-right w-24">
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => handleAddMovieToSchedule(movie)} className="text-[#00f0ff] hover:text-white p-2 rounded-lg hover:bg-[#00f0ff]/20 transition-all" title="Adicionar à Grade">
+                          <Plus size={16} />
+                        </button>
+                        <button onClick={() => handleRemoveMovie(movie)} className="text-red-500 hover:text-white p-2 rounded-lg hover:bg-red-500/20 transition-all" title="Excluir">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             {moviesList.length === 0 && (
               <p className="text-white/40 text-center text-sm py-10">Nenhum filme cadastrado.</p>
             )}
