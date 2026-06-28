@@ -42,10 +42,18 @@ export default function VideoPlayer() {
       }
 
       const { data: broadcastData } = await supabase.from('broadcast_control').select('*').single();
-      const { data: programsData } = await supabase.from('programacao').select('url, title');
+      const { data: programsData } = await supabase.from('programacao').select('url, title').order('sort_order', { ascending: true });
 
       if (broadcastData) {
         updateState(broadcastData, programsData || []);
+      } else {
+        console.error("Nenhum dado encontrado na tabela broadcast_control.");
+        if (programsData && programsData.length > 0) {
+          setUrl(programsData[0].url);
+          setCurrentProgramTitle(programsData[0].title);
+        } else {
+          setUrl('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
+        }
       }
     };
 
@@ -79,7 +87,14 @@ export default function VideoPlayer() {
       setUrl(currentUrl);
       setCurrentProgramTitle('');
     } else {
-      currentUrl = data.current_video_id || 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+      if (data.current_video_id) {
+        currentUrl = data.current_video_id;
+      } else if (programs && programs.length > 0) {
+        currentUrl = programs[0].url;
+      } else {
+        currentUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+      }
+      
       setUrl(currentUrl);
       
       const matchedProgram = programs.find((p: any) => p.url === currentUrl);
@@ -161,6 +176,10 @@ export default function VideoPlayer() {
         onBuffer={() => setIsBuffering(true)}
         onBufferEnd={() => setIsBuffering(false)}
         onReady={() => setIsBuffering(false)}
+        onError={(e: any) => {
+          console.error("VideoPlayer Error - Tentando carregar a URL:", url);
+          console.error("Detalhes do erro do ReactPlayer:", e);
+        }}
         config={({
           file: {
             hlsOptions: {
