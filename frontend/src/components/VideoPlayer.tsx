@@ -176,9 +176,12 @@ export default function VideoPlayer() {
         onBuffer={() => setIsBuffering(true)}
         onBufferEnd={() => setIsBuffering(false)}
         onReady={() => setIsBuffering(false)}
+        onStart={() => setIsBuffering(false)}
+        onPlay={() => setIsBuffering(false)}
         onError={(e: any) => {
           console.error("VideoPlayer Error - Tentando carregar a URL:", url);
           console.error("Detalhes do erro do ReactPlayer:", e);
+          setIsBuffering(false); // Stop loading indicator on error
         }}
         config={({
           file: {
@@ -186,9 +189,6 @@ export default function VideoPlayer() {
               maxBufferLength: 30,
               maxBufferSize: 60 * 1000 * 1000,
               lowLatencyMode: true,
-            },
-            attributes: {
-              crossOrigin: "anonymous"
             }
           }
         } as any)}
