@@ -205,9 +205,7 @@ export default function VideoPlayer() {
         setPlayerErrorMsg('');
       }
     } else {
-      if (data.current_video_id) {
-        currentUrl = data.current_video_id;
-      } else if (programs && programs.length > 0) {
+      if (programs && programs.length > 0) {
         if (currentIndexRef.current >= programs.length) {
           currentIndexRef.current = 0;
         }
