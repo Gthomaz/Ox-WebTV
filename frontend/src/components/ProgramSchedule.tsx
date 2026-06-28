@@ -87,12 +87,12 @@ export function ProgramSchedule() {
           )}
         </div>
 
-        {/* Desktop: Horizontal Marquee */}
-        <div className="hidden md:flex w-max animate-marquee hover:[animation-play-state:paused] overflow-hidden">
-          {[...programs, ...programs, ...programs].map((program, idx) => (
+        {/* Desktop: Horizontal Scroll */}
+        <div className="hidden md:flex w-full overflow-x-auto pb-4 gap-6 px-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#00f0ff transparent' }}>
+          {programs.map((program, idx) => (
             <div 
               key={`desktop-${program.id}-${idx}`}
-              className="w-[320px] mx-3 flex-shrink-0 rounded-2xl overflow-hidden relative group bg-black border border-white/10 hover:border-[#00f0ff]/50 transition-colors"
+              className="w-[320px] flex-shrink-0 rounded-2xl overflow-hidden relative group bg-black border border-white/10 hover:border-[#00f0ff]/50 transition-colors cursor-pointer"
             >
               <div className="absolute inset-0 z-0">
                 {program.thumbnail_url ? (
@@ -108,16 +108,17 @@ export function ProgramSchedule() {
                     <Clock size={14} />
                     {formatTime(program.start_time)}
                   </div>
+                  <PlayCircle size={24} className="text-white/50 group-hover:text-[#00f0ff] transition-colors" />
                 </div>
                 <h3 className="text-lg font-bold text-white leading-tight mb-1 line-clamp-1">{program.title}</h3>
                 {program.description && (
-                  <p className="text-sm text-white/60 line-clamp-2">{program.description}</p>
+                  <p className="text-sm text-white/60 line-clamp-1">{program.description}</p>
                 )}
               </div>
             </div>
           ))}
           {programs.length === 0 && (
-             <div className="text-white/40 px-8 py-4">Nenhum programa na grade no momento.</div>
+             <div className="text-white/40 py-4 text-sm text-center w-full">Nenhum programa na grade no momento.</div>
           )}
         </div>
 
