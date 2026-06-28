@@ -18,6 +18,7 @@ interface Program {
   url: string;
   start_time: string;
   sort_order: number;
+  duration_seconds?: number;
   thumbnail_url?: string;
   description?: string;
 }
@@ -201,12 +202,33 @@ export default function AdminPage() {
       finalStartTime = now.toISOString().slice(0, 16);
     }
 
+    let duration = 0;
+    try {
+      duration = await new Promise<number>((resolve) => {
+        const video = document.createElement('video');
+        video.crossOrigin = 'anonymous';
+        video.src = newUrl;
+        video.preload = 'metadata';
+        video.onloadedmetadata = () => resolve(Math.round(video.duration || 0));
+        video.onerror = () => resolve(0);
+        setTimeout(() => resolve(0), 4000);
+      });
+    } catch(e) {}
+
+    const totalDuration = programs.reduce((acc, p) => acc + (p.duration_seconds || 0), 0);
+    if (totalDuration + duration > 86400) {
+      alert(`Bloqueado! Limite de 24 horas excedido. Total atual: ${(totalDuration/3600).toFixed(1)}h | Este vídeo: ${(duration/3600).toFixed(1)}h`);
+      setIsAdding(false);
+      return;
+    }
+
     const { error } = await supabase.from('programacao').insert([
       { 
         title: newTitle, 
         url: newUrl, 
         start_time: finalStartTime, 
         sort_order: maxSort + 1,
+        duration_seconds: duration,
         thumbnail_url: newThumbnail,
         description: newDesc
       }
@@ -224,6 +246,22 @@ export default function AdminPage() {
   const handleRemoveProgram = async (id: number) => {
     const { error } = await supabase.from('programacao').delete().eq('id', id);
     if (!error) fetchPrograms();
+  };
+
+  const handleSaveGrid = async () => {
+    setIsSaving(true);
+    const { error } = await supabase
+      .from('broadcast_control')
+      .update({ grid_updated_at: new Date().toISOString() })
+      .eq('id', 1);
+    
+    setIsSaving(false);
+    if (!error) {
+      setSuccessMsg('Grade Salva! Player atualizado para todos.');
+      setTimeout(() => setSuccessMsg(''), 4000);
+    } else {
+      alert('Erro ao salvar grade: ' + error.message);
+    }
   };
 
   const extractThumbnail = (videoFile: File): Promise<Blob> => {
@@ -512,6 +550,12 @@ export default function AdminPage() {
           </div>
 
           <div className="mt-4 pt-4 border-t border-white/10">
+            <div className="flex justify-end mb-4">
+              <button onClick={handleSaveGrid} disabled={isSaving} className="flex items-center gap-2 bg-[#00f0ff] hover:bg-[#00f0ff]/80 text-[#051622] font-bold px-6 py-3 rounded-lg shadow-[0_0_15px_rgba(0,240,255,0.4)] transition-all">
+                <Save size={18} />
+                {isSaving ? 'Salvando...' : 'Salvar Grade e Atualizar Player'}
+              </button>
+            </div>
             <form onSubmit={handleAddProgram} className="space-y-3">
               <input type="text" placeholder="Título (Ex: Noticiário)" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
               <input type="text" placeholder="Sinopse / Descrição Curta" value={newDesc} onChange={e => setNewDesc(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
