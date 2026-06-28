@@ -45,10 +45,10 @@ export function ProgramSchedule() {
   };
 
   return (
-    <div className="w-full mt-12 mb-8">
+    <div className="w-full mt-2 mb-8">
       <div className="flex flex-col px-4 md:px-0 mb-3">
         <h2 className="text-2xl font-bold text-white tracking-wide mb-2">Grade de <span className="text-[#00f0ff]">Programação</span></h2>
-        <div className="h-1 w-full bg-gradient-to-r from-red-600 to-yellow-400 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
+        <div className="h-[2px] w-full bg-gradient-to-r from-red-600 to-yellow-400 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
       </div>
       
       <div className="relative w-full bg-black/20 border-y border-white/5 py-4 md:py-6 md:overflow-hidden">
