@@ -96,6 +96,34 @@ export default function VideoPlayer() {
     }
   }, [volume, muted, useNativeFallback]);
 
+  // Native Error Listener directly on DOM element
+  useEffect(() => {
+    const videoObj = nativeVideoRef.current;
+    if (!videoObj) return;
+
+    const handleError = (e: Event) => {
+      console.error("DOM Native Video Error", e);
+      const mediaError = videoObj.error;
+      let errorDetails = "Erro desconhecido (Evento)";
+      if (mediaError) {
+        switch (mediaError.code) {
+          case mediaError.MEDIA_ERR_ABORTED: errorDetails = "1 (ABORTED): Usuário abortou."; break;
+          case mediaError.MEDIA_ERR_NETWORK: errorDetails = "2 (NETWORK): Erro de rede/CORS bloqueado pelo Bucket Supabase."; break;
+          case mediaError.MEDIA_ERR_DECODE: errorDetails = "3 (DECODE): Falha de decodificação."; break;
+          case mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED: errorDetails = "4 (SRC_NOT_SUPPORTED): Formato/URL bloqueado."; break;
+          default: errorDetails = `${mediaError.code}: Erro genérico.`; break;
+        }
+      } else {
+        errorDetails = "Sem código de erro. Possível CORS rigoroso ou arquivo ausente.";
+      }
+      setPlayerErrorMsg(`ALERTA TÉCNICO: ${errorDetails} | Src: ${videoObj.src}`);
+      setIsBuffering(false);
+    };
+
+    videoObj.addEventListener('error', handleError);
+    return () => videoObj.removeEventListener('error', handleError);
+  }, [url, useNativeFallback]);
+
   useEffect(() => {
     const fetchStatusAndPrograms = async () => {
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -152,11 +180,11 @@ export default function VideoPlayer() {
       setPlayerErrorMsg('');
     } else {
       if (data.current_video_id) {
-        currentUrl = data.current_video_id;
+        currentUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'; // TESTE DIAGNOSTICO
       } else if (programs && programs.length > 0) {
-        currentUrl = programs[0].url;
+        currentUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'; // TESTE DIAGNOSTICO
       } else {
-        currentUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+        currentUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'; // TESTE DIAGNOSTICO
       }
       
       setUrl(currentUrl);
