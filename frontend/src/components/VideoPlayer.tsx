@@ -1,15 +1,28 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
+import dynamic from 'next/dynamic';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2 } from 'lucide-react';
+
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;
 
 export default function VideoPlayer() {
   const [url, setUrl] = useState<string>('');
   const [isLive, setIsLive] = useState(false);
+  const [currentProgramTitle, setCurrentProgramTitle] = useState<string>('');
   
-  // New States
+  // Custom Controls State
+  const [playing, setPlaying] = useState(true);
+  const [volume, setVolume] = useState(0.8);
+  const [muted, setMuted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [isBuffering, setIsBuffering] = useState(true);
+
+  // New States from DB
   const [watermarkUrl, setWatermarkUrl] = useState<string>('');
   const [watermarkOpacity, setWatermarkOpacity] = useState<number>(1);
   const [watermarkPosition, setWatermarkPosition] = useState<string>('bottom-right');
@@ -18,33 +31,35 @@ export default function VideoPlayer() {
   const [pollOptions, setPollOptions] = useState<string[]>([]);
   const [hasVoted, setHasVoted] = useState(false);
 
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    const fetchStatus = async () => {
+    const fetchStatusAndPrograms = async () => {
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
         setUrl('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
         return;
       }
 
-      const { data, error } = await supabase
-        .from('broadcast_control')
-        .select('*')
-        .single();
-      
-      if (data) {
-        updateState(data);
+      const { data: broadcastData } = await supabase.from('broadcast_control').select('*').single();
+      const { data: programsData } = await supabase.from('programacao').select('url, title');
+
+      if (broadcastData) {
+        updateState(broadcastData, programsData || []);
       }
     };
 
-    fetchStatus();
+    fetchStatusAndPrograms();
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const channel = supabase
         .channel('schema-db-changes')
         .on(
           'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'broadcast_control' },
-          (payload) => {
-            updateState(payload.new);
+          { event: '*', schema: 'public', table: 'broadcast_control' },
+          async (payload) => {
+            const { data: programsData } = await supabase.from('programacao').select('url, title');
+            updateState(payload.new || payload.old, programsData || []);
           }
         )
         .subscribe();
@@ -55,12 +70,20 @@ export default function VideoPlayer() {
     }
   }, []);
 
-  const updateState = (data: any) => {
+  const updateState = (data: any, programs: any[]) => {
     setIsLive(data.is_live);
+    let currentUrl = '';
+    
     if (data.is_live) {
-      setUrl(data.live_url);
+      currentUrl = data.live_url;
+      setUrl(currentUrl);
+      setCurrentProgramTitle('');
     } else {
-      setUrl(data.current_video_id || 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
+      currentUrl = data.current_video_id || 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+      setUrl(currentUrl);
+      
+      const matchedProgram = programs.find((p: any) => p.url === currentUrl);
+      setCurrentProgramTitle(matchedProgram ? matchedProgram.title : 'Programação OXTV');
     }
     
     setWatermarkUrl(data.watermark_url || '');
@@ -68,40 +91,117 @@ export default function VideoPlayer() {
     setWatermarkPosition(data.watermark_position || 'bottom-right');
     setActiveBanner(data.active_banner || '');
     
-    // Reset poll vote if question changes
     setPollQuestion((prev) => {
-      if (prev !== data.active_poll_question) {
-        setHasVoted(false);
-      }
+      if (prev !== data.active_poll_question) setHasVoted(false);
       return data.active_poll_question || '';
     });
-    
     setPollOptions(data.active_poll_options || []);
   };
 
   const getWatermarkClasses = () => {
     switch (watermarkPosition) {
-      case 'top-left': return 'top-4 left-4';
+      case 'top-left': return 'top-20 left-4'; 
       case 'top-right': return 'top-4 right-4';
-      case 'bottom-left': return 'bottom-16 left-4'; 
-      case 'bottom-right': return 'bottom-16 right-4';
-      default: return 'bottom-16 right-4';
+      case 'bottom-left': return 'bottom-20 left-4'; 
+      case 'bottom-right': return 'bottom-20 right-4';
+      default: return 'bottom-20 right-4';
     }
   };
+
+  const handleMouseMove = useCallback(() => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+  }, []);
+
+  const togglePlay = () => setPlaying(!playing);
+  const toggleMute = () => setMuted(!muted);
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => setVolume(parseFloat(e.target.value));
+  
+  const toggleFullscreen = async () => {
+    if (!playerContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      await playerContainerRef.current.requestFullscreen().catch(err => console.error(err));
+      setIsFullscreen(true);
+    } else {
+      await document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   if (!url) {
     return (
       <div className="video-container flex items-center justify-center bg-black/50 aspect-video text-white/50 rounded-2xl border border-white/10">
-        Aguardando conexão com o servidor...
+        <Loader2 className="animate-spin mr-2" /> Aguardando conexão com o servidor...
       </div>
     );
   }
 
   return (
-    <div className="video-container relative w-full max-w-5xl mx-auto aspect-video rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(14,75,119,0.5)] border border-white/10 group bg-black">
-      <video controls width="100%" src={url} autoPlay className="w-full h-full object-cover">
-        Seu navegador não suporta a reprodução de vídeo.
-      </video>
+    <div 
+      ref={playerContainerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setShowControls(false)}
+      className="video-container relative w-full max-w-5xl mx-auto aspect-video rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(14,75,119,0.5)] border border-white/10 group bg-black"
+    >
+      <ReactPlayer
+        url={url}
+        playing={playing}
+        volume={volume}
+        muted={muted}
+        width="100%"
+        height="100%"
+        style={{ position: 'absolute', top: 0, left: 0 }}
+        onBuffer={() => setIsBuffering(true)}
+        onBufferEnd={() => setIsBuffering(false)}
+        onReady={() => setIsBuffering(false)}
+        config={({
+          file: {
+            hlsOptions: {
+              maxBufferLength: 30,
+              maxBufferSize: 60 * 1000 * 1000,
+              lowLatencyMode: true,
+            },
+            attributes: {
+              crossOrigin: "anonymous"
+            }
+          }
+        } as any)}
+      />
+
+      {/* Buffering Indicator */}
+      {isBuffering && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none bg-black/20">
+          <Loader2 size={48} className="text-[#00f0ff] animate-spin drop-shadow-lg" />
+        </div>
+      )}
+
+      {/* Status Overlay (AO VIVO / Título) */}
+      <div className={`absolute top-4 left-4 z-20 pointer-events-none transition-opacity duration-500 ${showControls || !playing ? 'opacity-100' : 'opacity-0'}`}>
+        {isLive ? (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md bg-black/60 border border-red-500/30 text-white shadow-lg w-max">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              </span>
+              <span className="text-xs font-bold tracking-wider text-red-400">AO VIVO</span>
+            </div>
+            <span className="text-xs text-white/70 font-medium px-2 drop-shadow-md">Transmissão Direta</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 px-4 py-2 rounded-lg backdrop-blur-md bg-black/60 border border-white/10 text-white shadow-lg w-max">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#00f0ff]"></div>
+            <span className="text-sm font-semibold tracking-wide text-white drop-shadow-md">{currentProgramTitle}</span>
+          </div>
+        )}
+      </div>
 
       {/* Watermark Dinâmico */}
       {(watermarkUrl || Logo) && (
@@ -127,48 +227,59 @@ export default function VideoPlayer() {
         </div>
       )}
 
-      {/* Indicador de Status do Stream */}
-      {isLive && (
-        <div className="absolute top-4 left-4 z-20 pointer-events-none">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md bg-black/40 border border-red-500/30 text-white">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-            </span>
-            <span className="text-xs font-bold tracking-wider text-red-400">AO VIVO</span>
-          </div>
-        </div>
-      )}
-
       {/* Interactive Poll Overlay */}
       <div className={`absolute inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-500 ${pollQuestion && !hasVoted ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         {pollQuestion && (
-          <div className="bg-[#051622] border-2 border-[#00f0ff]/50 px-8 py-8 rounded-2xl shadow-[0_0_50px_rgba(0,240,255,0.3)] text-center max-w-lg w-full transform transition-all duration-500 scale-100 pointer-events-auto">
-            <h3 className="text-[#00f0ff] font-bold text-sm uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00f0ff] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#00f0ff]"></span>
-              </span>
-              Enquete Interativa
-            </h3>
-            
-            <p className="text-white text-2xl font-bold leading-snug mb-8">{pollQuestion}</p>
-            
-            <div className="space-y-3">
-              {pollOptions?.map((option, idx) => (
-                <button 
-                  key={idx}
-                  onClick={() => setHasVoted(true)}
-                  className="w-full bg-[#0e4b77]/40 hover:bg-[#00f0ff] hover:text-[#051622] border border-[#0e4b77] hover:border-[#00f0ff] text-white py-3 px-6 rounded-xl font-semibold transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] hover:scale-[1.02]"
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-            <button onClick={() => setHasVoted(true)} className="mt-4 text-xs text-white/40 hover:text-white transition-colors">Fechar (Ignorar)</button>
-          </div>
+           <div className="bg-[#051622] border-2 border-[#00f0ff]/50 px-8 py-8 rounded-2xl shadow-[0_0_50px_rgba(0,240,255,0.3)] text-center max-w-lg w-full transform transition-all duration-500 scale-100 pointer-events-auto">
+             <h3 className="text-[#00f0ff] font-bold text-sm uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
+               <span className="relative flex h-3 w-3">
+                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00f0ff] opacity-75"></span>
+                 <span className="relative inline-flex rounded-full h-3 w-3 bg-[#00f0ff]"></span>
+               </span>
+               Enquete Interativa
+             </h3>
+             <p className="text-white text-2xl font-bold leading-snug mb-8">{pollQuestion}</p>
+             <div className="space-y-3">
+               {pollOptions?.map((option, idx) => (
+                 <button key={idx} onClick={() => setHasVoted(true)} className="w-full bg-[#0e4b77]/40 hover:bg-[#00f0ff] hover:text-[#051622] border border-[#0e4b77] hover:border-[#00f0ff] text-white py-3 px-6 rounded-xl font-semibold transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] hover:scale-[1.02]">
+                   {option}
+                 </button>
+               ))}
+             </div>
+             <button onClick={() => setHasVoted(true)} className="mt-4 text-xs text-white/40 hover:text-white transition-colors">Fechar (Ignorar)</button>
+           </div>
         )}
       </div>
+
+      {/* Custom Controls Bar */}
+      <div className={`absolute bottom-0 left-0 right-0 z-30 px-4 py-4 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-500 ${showControls || !playing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center gap-4">
+            <button onClick={togglePlay} className="text-white hover:text-[#00f0ff] transition-colors p-1" title={playing ? 'Pausar' : 'Reproduzir'}>
+              {playing ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
+            </button>
+            <div className="flex items-center gap-2 group">
+              <button onClick={toggleMute} className="text-white hover:text-[#00f0ff] transition-colors p-1">
+                {muted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              </button>
+              <input 
+                type="range" 
+                min={0} max={1} step="0.05" 
+                value={muted ? 0 : volume} 
+                onChange={handleVolumeChange} 
+                className="w-0 group-hover:w-20 transition-all duration-300 opacity-0 group-hover:opacity-100 accent-[#00f0ff] h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button onClick={toggleFullscreen} className="text-white hover:text-[#00f0ff] transition-colors p-1">
+              {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+            </button>
+          </div>
+        </div>
+      </div>
+      
     </div>
   );
 }
