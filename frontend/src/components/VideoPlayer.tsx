@@ -341,6 +341,8 @@ export default function VideoPlayer() {
           muted={muted}
           preload="auto"
           className="absolute inset-0 w-full h-full object-contain"
+          onLoadedData={() => setIsBuffering(false)}
+          onCanPlay={() => setIsBuffering(false)}
           onPlaying={() => setIsBuffering(false)}
           onWaiting={() => setIsBuffering(true)}
           onError={(e) => {
