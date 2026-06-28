@@ -704,6 +704,11 @@ export default function AdminPage() {
                   </select>
                 </div>
               </div>
+              <div className="pt-4 border-t border-white/10 mt-4 flex justify-end">
+                <button onClick={handleSaveControl} disabled={isSaving} className="bg-purple-600/50 border border-purple-500 hover:bg-purple-500 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center gap-2">
+                  {isSaving ? 'Salvando...' : 'Salvar Marca D\'água'}
+                </button>
+              </div>
             </div>
           </div>
 
