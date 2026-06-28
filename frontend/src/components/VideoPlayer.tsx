@@ -198,7 +198,12 @@ export default function VideoPlayer() {
       setUrl(currentUrl);
       setUseNativeFallback(currentUrl ? !currentUrl.includes('.m3u8') : false);
       setCurrentProgramTitle('');
-      setPlayerErrorMsg('');
+      if (!currentUrl || currentUrl.trim() === '') {
+        setPlayerErrorMsg('Sinal Ao Vivo Ligado, mas nenhuma URL foi configurada no painel.');
+        setIsBuffering(false);
+      } else {
+        setPlayerErrorMsg('');
+      }
     } else {
       if (data.current_video_id) {
         currentUrl = data.current_video_id;
