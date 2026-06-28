@@ -190,12 +190,19 @@ export default function AdminPage() {
     setIsAdding(true);
 
     const maxSort = programs.length > 0 ? Math.max(...programs.map(p => p.sort_order)) : 0;
+    
+    let finalStartTime = newStartTime;
+    if (!finalStartTime || finalStartTime.trim() === '') {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      finalStartTime = now.toISOString().slice(0, 16);
+    }
 
     const { error } = await supabase.from('programacao').insert([
       { 
         title: newTitle, 
         url: newUrl, 
-        start_time: newStartTime, 
+        start_time: finalStartTime, 
         sort_order: maxSort + 1,
         thumbnail_url: newThumbnail,
         description: newDesc
