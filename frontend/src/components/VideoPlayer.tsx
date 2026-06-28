@@ -180,11 +180,11 @@ export default function VideoPlayer() {
       setPlayerErrorMsg('');
     } else {
       if (data.current_video_id) {
-        currentUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'; // TESTE DIAGNOSTICO
+        currentUrl = data.current_video_id;
       } else if (programs && programs.length > 0) {
-        currentUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'; // TESTE DIAGNOSTICO
+        currentUrl = programs[0].url;
       } else {
-        currentUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'; // TESTE DIAGNOSTICO
+        currentUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
       }
       
       setUrl(currentUrl);
@@ -294,8 +294,9 @@ export default function VideoPlayer() {
           ref={nativeVideoRef}
           src={url}
           autoPlay={playing}
-          controls={false}
+          controls={true}
           muted={muted}
+          preload="auto"
           className="absolute inset-0 w-full h-full object-contain"
           onPlaying={() => setIsBuffering(false)}
           onWaiting={() => setIsBuffering(true)}
