@@ -93,7 +93,7 @@ export function Header() {
         onClick={() => setIsMobileMenuOpen(false)}
       >
         <div 
-          className={`absolute top-0 right-0 w-64 h-full bg-[#1e1e1e] border-l border-white/10 p-6 flex flex-col gap-8 shadow-2xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+          className={`absolute top-0 right-0 w-64 h-full bg-zinc-800 border-l border-white/10 p-6 flex flex-col gap-8 shadow-2xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
           onClick={e => e.stopPropagation()}
         >
           <div className="flex justify-end">
