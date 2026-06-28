@@ -25,6 +25,7 @@ export function Header() {
   }, []);
 
   return (
+    <>
     <header className="fixed top-0 left-0 w-full z-50 bg-[#0e4b77]/40 backdrop-blur-[10px] border-b border-white/10">
       <div className="max-w-screen-2xl mx-auto px-4 h-20 flex items-center justify-between">
         {/* Left: Logo */}
@@ -87,9 +88,10 @@ export function Header() {
         </div>
 
       </div>
+    </header>
 
       <div 
-        className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsMobileMenuOpen(false)}
       >
         <div 
@@ -142,7 +144,6 @@ export function Header() {
           </div>
         </div>
       </div>
-      
-    </header>
+    </>
   );
 }
