@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 import dynamic from 'next/dynamic';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2 } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2, AlertCircle } from 'lucide-react';
 
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;
 
@@ -22,6 +22,7 @@ export default function VideoPlayer() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [isBuffering, setIsBuffering] = useState(true);
+  const [playerErrorMsg, setPlayerErrorMsg] = useState<string>('');
 
   // New States from DB
   const [watermarkUrl, setWatermarkUrl] = useState<string>('');
@@ -56,6 +57,26 @@ export default function VideoPlayer() {
       }, 500); // Small delay to ensure DOM is ready
     }
   }, [url, useNativeFallback]);
+
+  // Global body click to brute-force autoplay policy
+  useEffect(() => {
+    const handleGlobalInteraction = () => {
+      if (useNativeFallback && nativeVideoRef.current && playing) {
+        nativeVideoRef.current.play().catch(e => console.log("Global Interaction Play Blocked:", e));
+      } else if (!useNativeFallback && reactPlayerRef.current && playing) {
+        try {
+          const internal = reactPlayerRef.current.getInternalPlayer();
+          if (internal && typeof internal.play === 'function') internal.play().catch(() => {});
+        } catch(e) {}
+      }
+    };
+    document.body.addEventListener('click', handleGlobalInteraction, { once: true });
+    document.body.addEventListener('touchstart', handleGlobalInteraction, { once: true });
+    return () => {
+      document.body.removeEventListener('click', handleGlobalInteraction);
+      document.body.removeEventListener('touchstart', handleGlobalInteraction);
+    };
+  }, [useNativeFallback, playing]);
 
   // Sync custom controls to native video
   useEffect(() => {
@@ -128,6 +149,7 @@ export default function VideoPlayer() {
       setUrl(currentUrl);
       setUseNativeFallback(currentUrl ? !currentUrl.includes('.m3u8') : false);
       setCurrentProgramTitle('');
+      setPlayerErrorMsg('');
     } else {
       if (data.current_video_id) {
         currentUrl = data.current_video_id;
@@ -139,6 +161,7 @@ export default function VideoPlayer() {
       
       setUrl(currentUrl);
       setUseNativeFallback(currentUrl ? !currentUrl.includes('.m3u8') : false);
+      setPlayerErrorMsg('');
       
       const matchedProgram = programs.find((p: any) => p.url === currentUrl);
       setCurrentProgramTitle(matchedProgram ? matchedProgram.title : 'Programação OXTV');
@@ -224,10 +247,9 @@ export default function VideoPlayer() {
           onStart={() => setIsBuffering(false)}
           onPlay={() => setIsBuffering(false)}
           onError={(e: any) => {
-            console.error("VideoPlayer Error - Tentando carregar a URL:", url);
-            console.error("Detalhes do erro do ReactPlayer:", e);
+            console.error("VideoPlayer Error - URL:", url, e);
+            setPlayerErrorMsg(`ReactPlayer Error: Falha ao carregar HLS. Motivo: ${e?.type || e?.message || 'Media não suportada ou CORS.'} | URL: ${url}`);
             setIsBuffering(false);
-            setUseNativeFallback(true);
           }}
           config={({
             file: {
@@ -251,10 +273,45 @@ export default function VideoPlayer() {
           onWaiting={() => setIsBuffering(true)}
           onError={(e) => {
             console.error("Native Video Error", e);
+            const mediaError = (e.target as HTMLVideoElement).error;
+            let errorDetails = "Erro desconhecido";
+            if (mediaError) {
+              switch (mediaError.code) {
+                case mediaError.MEDIA_ERR_ABORTED: errorDetails = "1 (MEDIA_ERR_ABORTED): Download abortado pelo usuário."; break;
+                case mediaError.MEDIA_ERR_NETWORK: errorDetails = "2 (MEDIA_ERR_NETWORK): Erro de rede ou CORS. Verifique permissões do Supabase."; break;
+                case mediaError.MEDIA_ERR_DECODE: errorDetails = "3 (MEDIA_ERR_DECODE): Erro de decodificação. Arquivo corrompido."; break;
+                case mediaError.MEDIA_ERR_SRC_NOT_SUPPORTED: errorDetails = "4 (MEDIA_ERR_SRC_NOT_SUPPORTED): Formato/Codec não suportado ou erro 403/404."; break;
+                default: errorDetails = `${mediaError.code}: Erro genérico na mídia.`; break;
+              }
+            }
+            setPlayerErrorMsg(`Native Video Error: ${errorDetails} | Src: ${url}`);
             setIsBuffering(false);
           }}
           playsInline
         />
+      )}
+
+      {/* ERROR OVERLAY */}
+      {playerErrorMsg && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 p-6 text-center border border-red-600/30 rounded-2xl">
+          <AlertCircle className="text-red-500 mb-4 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]" size={64} />
+          <h3 className="text-2xl font-bold text-white mb-2">Falha Crítica de Reprodução</h3>
+          <div className="bg-red-950/50 p-4 rounded-lg border border-red-500/30 w-full max-w-3xl overflow-hidden mb-6">
+            <p className="text-red-400 font-mono text-sm break-words select-all text-left">
+              {playerErrorMsg}
+            </p>
+          </div>
+          <button 
+            onClick={() => { 
+              setPlayerErrorMsg(''); 
+              setIsBuffering(true); 
+              if (useNativeFallback && nativeVideoRef.current) nativeVideoRef.current.load();
+            }}
+            className="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(220,38,38,0.5)]"
+          >
+            Recarregar Vídeo
+          </button>
+        </div>
       )}
 
       {/* Buffering Indicator */}
