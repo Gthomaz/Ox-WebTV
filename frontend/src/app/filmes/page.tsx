@@ -17,8 +17,12 @@ interface Movie {
 export default function FilmesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [activeMovieId, setActiveMovieId] = useState<number | null>(null);
+  const [flippedId, setFlippedId] = useState<number | null>(null);
 
   const activeMovie = movies.find(m => m.id === activeMovieId);
+
+  const fallbackImage = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=600&auto=format&fit=crop";
+  const fallbackDesc = "Um clássico imperdível que vai prender sua atenção do início ao fim. Prepare a pipoca e embarque nesta aventura épica cheia de emoção, suspense e reviravoltas inesquecíveis!";
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -84,12 +88,13 @@ export default function FilmesPage() {
           {movies.map(movie => (
             <div
               key={movie.id}
-              className={`relative aspect-[2/3] rounded-xl cursor-pointer group transition-all duration-700 [transform-style:preserve-3d] hover:[transform:rotateY(180deg)] ${activeMovieId === movie.id ? 'shadow-[0_0_20px_rgba(0,240,255,0.4)] scale-[1.02]' : 'hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(0,240,255,0.2)]'}`}
+              onClick={() => setFlippedId(flippedId === movie.id ? null : movie.id)}
+              className={`relative aspect-[2/3] rounded-xl cursor-pointer group transition-all duration-700 [transform-style:preserve-3d] md:hover:[transform:rotateY(180deg)] ${flippedId === movie.id ? '[transform:rotateY(180deg)]' : ''} ${activeMovieId === movie.id ? 'shadow-[0_0_20px_rgba(0,240,255,0.4)] scale-[1.02]' : 'md:hover:scale-[1.03] md:hover:shadow-[0_0_20px_rgba(0,240,255,0.2)]'}`}
             >
               {/* Frente do Card */}
               <div className="absolute inset-0 [backface-visibility:hidden] rounded-xl overflow-hidden border border-white/10">
                 <Image
-                  src={movie.cover_url}
+                  src={movie.cover_url || fallbackImage}
                   alt={movie.title}
                   fill
                   sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
@@ -103,14 +108,15 @@ export default function FilmesPage() {
 
               {/* Verso do Card */}
               <div 
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setActiveMovieId(movie.id);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 className="absolute inset-0 h-full w-full rounded-xl bg-gradient-to-br from-[#0e4b77] to-[#051622] border border-[#00f0ff]/30 p-4 [transform:rotateY(180deg)] [backface-visibility:hidden] flex flex-col items-center justify-center text-center overflow-hidden"
               >
                 <h3 className="text-white font-bold text-lg mb-2">{movie.title}</h3>
-                <p className="text-white/70 text-sm line-clamp-5 mb-4">{movie.description}</p>
+                <p className="text-white/70 text-sm line-clamp-5 mb-4">{movie.description || fallbackDesc}</p>
                 <button className="flex items-center gap-2 bg-[#00f0ff]/20 hover:bg-[#00f0ff]/40 border border-[#00f0ff] text-white px-4 py-2 rounded-full transition-colors">
                   <PlayCircle size={18} />
                   Assistir
