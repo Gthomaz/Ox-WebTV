@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Logo from '@/assets/Ox-Tv-Final-Logo.png';
-import { Lock, Radio, Save, CheckCircle2, Plus, Trash2, CalendarClock, GripVertical, Image as ImageIcon, MessageSquare, AlertCircle, LogOut, Upload } from 'lucide-react';
+import { Lock, Radio, Save, CheckCircle2, Plus, Trash2, CalendarClock, GripVertical, Image as ImageIcon, MessageSquare, AlertCircle, LogOut, Upload, Film } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -98,8 +98,10 @@ export default function AdminPage() {
   const [newMovieDesc, setNewMovieDesc] = useState('');
   const [newMovieVideo, setNewMovieVideo] = useState('');
   const [isAddingMovie, setIsAddingMovie] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [uploadCoverProgress, setUploadCoverProgress] = useState(0);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [uploadVideoProgress, setUploadVideoProgress] = useState(0);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -214,6 +216,42 @@ export default function AdminPage() {
     if (!error) fetchPrograms();
   };
 
+  const extractThumbnail = (videoFile: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(videoFile);
+      video.crossOrigin = 'anonymous';
+      video.muted = true;
+      video.preload = 'metadata';
+      
+      video.onloadeddata = () => {
+        video.currentTime = 1; // Pega o frame em 1 segundo
+      };
+
+      video.onseeked = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Falha ao gerar capa'));
+            }
+            URL.revokeObjectURL(video.src);
+          }, 'image/jpeg', 0.7);
+        } else {
+          reject(new Error('Erro no contexto do canvas'));
+        }
+      };
+
+      video.onerror = (e) => reject(e);
+    });
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -223,52 +261,56 @@ export default function AdminPage() {
       return;
     }
 
-    setIsUploading(true);
-    setUploadProgress(0);
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-    const filePath = `filmes/${fileName}`;
+    setIsUploadingVideo(true);
+    setUploadVideoProgress(0);
+    setIsUploadingCover(true);
+    setUploadCoverProgress(0);
 
     try {
+      // 1. Gerar e Enviar Capa (Thumbnail Automática)
+      const thumbBlob = await extractThumbnail(file);
+      const thumbFile = new File([thumbBlob], `cover_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      const thumbPath = `filmes/cover_${Math.random().toString(36).substring(2, 15)}_${Date.now()}.jpg`;
+
+      const { error: thumbError } = await supabase.storage
+        .from('filmes')
+        .upload(thumbPath, thumbFile, { cacheControl: '3600', upsert: false });
+
+      if (thumbError) throw thumbError;
+      setUploadCoverProgress(100);
+      const { data: thumbUrlData } = supabase.storage.from('filmes').getPublicUrl(thumbPath);
+      setNewMovieCover(thumbUrlData.publicUrl);
+      setIsUploadingCover(false);
+
+      // 2. Enviar Vídeo
+      const fileExt = file.name.split('.').pop();
+      const videoPath = `filmes/video_${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
+        setUploadVideoProgress(prev => prev >= 90 ? 90 : prev + 10);
       }, 300);
 
-      const { data, error } = await supabase.storage
+      const { error: videoError } = await supabase.storage
         .from('filmes')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+        .upload(videoPath, file, { cacheControl: '3600', upsert: false });
 
       clearInterval(progressInterval);
+      if (videoError) throw videoError;
 
-      if (error) throw error;
+      setUploadVideoProgress(100);
+      const { data: videoUrlData } = supabase.storage.from('filmes').getPublicUrl(videoPath);
+      setNewMovieVideo(videoUrlData.publicUrl);
 
-      setUploadProgress(100);
-
-      const { data: publicUrlData } = supabase.storage
-        .from('filmes')
-        .getPublicUrl(filePath);
-
-      setNewMovieVideo(publicUrlData.publicUrl);
-      
       setTimeout(() => {
-        setIsUploading(false);
-        setUploadProgress(0);
+        setIsUploadingVideo(false);
+        setUploadVideoProgress(0);
+        setUploadCoverProgress(0);
       }, 1500);
 
     } catch (error: any) {
-      alert('Erro no upload: ' + error.message);
-      setIsUploading(false);
-      setUploadProgress(0);
+      alert(`Erro no upload: ` + error.message);
+      setIsUploadingVideo(false);
+      setIsUploadingCover(false);
     }
   };
 
@@ -447,28 +489,25 @@ export default function AdminPage() {
             <form onSubmit={handleAddMovie} className="space-y-3">
               <input type="text" placeholder="Título do Filme" value={newMovieTitle} onChange={e => setNewMovieTitle(e.target.value)} required className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
               <input type="text" placeholder="Sinopse" value={newMovieDesc} onChange={e => setNewMovieDesc(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input type="url" placeholder="URL da Capa" value={newMovieCover} onChange={e => setNewMovieCover(e.target.value)} required className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
-                
-                <div className="flex flex-col gap-2">
-                  <div className="flex gap-2">
-                    <input type="url" placeholder="URL do Vídeo" value={newMovieVideo} onChange={e => setNewMovieVideo(e.target.value)} required className="flex-1 w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
-                    
-                    <label className={`flex items-center justify-center gap-1 ${isUploading ? 'bg-white/10 text-white/50 cursor-not-allowed' : 'bg-[#00f0ff]/10 hover:bg-[#00f0ff]/20 text-[#00f0ff] cursor-pointer'} border border-[#00f0ff]/30 px-3 py-2 rounded-lg text-sm transition-all whitespace-nowrap`} title="Upload de Vídeo">
-                      <Upload size={16} />
-                      <span className="hidden xl:inline">Upload</span>
-                      <input type="file" accept="video/*" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
-                    </label>
+              <div className="flex flex-col gap-2 mt-2">
+                <label className={`flex flex-col items-center justify-center gap-2 ${(isUploadingVideo || isUploadingCover) ? 'bg-white/10 text-white/50 cursor-not-allowed' : (newMovieVideo && newMovieCover) ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-[#00f0ff]/10 hover:bg-[#00f0ff]/20 text-[#00f0ff] cursor-pointer'} border border-[#00f0ff]/30 px-3 py-6 rounded-lg text-sm transition-all text-center`} title="Upload Automático do Filme">
+                  {(newMovieVideo && newMovieCover && !isUploadingVideo && !isUploadingCover) ? <Film size={24} /> : <Upload size={24} />}
+                  <span className="font-medium">
+                    {(isUploadingVideo || isUploadingCover) 
+                      ? 'Processando e Enviando...' 
+                      : (newMovieVideo && newMovieCover) 
+                        ? 'Vídeo e Capa Prontos!' 
+                        : 'Selecionar Arquivo de Vídeo (Capa Automática)'}
+                  </span>
+                  <input type="file" accept="video/*" className="hidden" onChange={handleFileUpload} disabled={isUploadingVideo || isUploadingCover} />
+                </label>
+                {(isUploadingVideo || isUploadingCover) && (
+                  <div className="w-full bg-white/10 rounded-full h-1 mt-1 overflow-hidden">
+                    <div className="bg-[#00f0ff] h-1 rounded-full transition-all duration-300" style={{ width: `${Math.max(uploadVideoProgress, uploadCoverProgress)}%` }}></div>
                   </div>
-                  
-                  {isUploading && (
-                    <div className="w-full bg-white/10 rounded-full h-1 mt-1 overflow-hidden">
-                      <div className="bg-[#00f0ff] h-1 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
-              <button type="submit" disabled={isAddingMovie} className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 py-2 rounded-lg text-sm transition-all">
+              <button type="submit" disabled={isAddingMovie || !newMovieCover || !newMovieVideo} className={`w-full flex items-center justify-center gap-2 ${(isAddingMovie || !newMovieCover || !newMovieVideo) ? 'bg-white/5 text-white/40 cursor-not-allowed' : 'bg-[#00f0ff]/20 hover:bg-[#00f0ff]/30 text-[#00f0ff]'} border border-white/10 py-2 rounded-lg text-sm transition-all`}>
                 <Plus size={16} /> Adicionar Filme
               </button>
             </form>
