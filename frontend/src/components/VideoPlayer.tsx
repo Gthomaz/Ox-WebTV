@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 import dynamic from 'next/dynamic';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2, AlertCircle, Cast } from 'lucide-react';
+import { LiveChat } from './LiveChat';
 
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;
 
@@ -33,9 +34,12 @@ export default function VideoPlayer() {
   const [watermarkOpacity, setWatermarkOpacity] = useState<number>(1);
   const [watermarkPosition, setWatermarkPosition] = useState<string>('bottom-right');
   const [activeBanner, setActiveBanner] = useState<string>('');
+  
+  // Interactive Polling and Chat
   const [pollQuestion, setPollQuestion] = useState<string>('');
   const [pollOptions, setPollOptions] = useState<string[]>([]);
   const [hasVoted, setHasVoted] = useState(false);
+  const [isChatActive, setIsChatActive] = useState(false);
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -225,6 +229,7 @@ export default function VideoPlayer() {
       return data.active_poll_question || '';
     });
     setPollOptions(data.active_poll_options || []);
+    setIsChatActive(data.chat_active || false);
   };
 
   const getWatermarkClasses = () => {
@@ -451,6 +456,9 @@ export default function VideoPlayer() {
            </div>
         )}
       </div>
+
+      {/* Live Chat Overlay */}
+      <LiveChat isActive={isChatActive} />
 
       {/* Custom Controls Bar */}
       <div className={`absolute bottom-0 left-0 right-0 z-30 px-4 py-4 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-500 ${showControls || !playing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>

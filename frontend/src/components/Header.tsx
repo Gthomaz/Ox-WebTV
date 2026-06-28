@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Menu, X } from 'lucide-react';
 import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 
 export function Header() {
   const [time, setTime] = useState<string>('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const updateClock = () => {
@@ -74,12 +76,74 @@ export function Header() {
               Filmes
             </Link>
           </nav>
+          
+          {/* Mobile Hamburger Button */}
+          <button 
+            className="md:hidden p-2 text-white hover:text-[#00f0ff] transition-colors"
+            onClick={() => setIsMobileMenuOpen(true)}
+          >
+            <Menu size={28} />
+          </button>
         </div>
 
       </div>
 
-      {/* Mobile Center elements (shown only on small screens below the header or integrated if space permits) */}
-      {/* For this minimal setup, let's keep the clock and live status visible in the center but smaller on mobile if we remove 'hidden sm:flex' */}
+      {/* Mobile Slider Menu */}
+      <div 
+        className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      >
+        <div 
+          className={`absolute top-0 right-0 w-64 h-full bg-[#020b14] border-l border-white/10 p-6 flex flex-col gap-8 shadow-2xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex justify-end">
+            <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/60 hover:text-white p-2">
+              <X size={28} />
+            </button>
+          </div>
+          
+          <nav className="flex flex-col gap-4 mt-8">
+            <Link 
+              href="/" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-4 transition-colors"
+            >
+              Home (Player)
+            </Link>
+            <Link 
+              href="/grade" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-4 transition-colors"
+            >
+              Grade Completa
+            </Link>
+            <Link 
+              href="/filmes" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-4 transition-colors"
+            >
+              Catálogo de Filmes
+            </Link>
+          </nav>
+          
+          <div className="mt-auto pt-8 border-t border-white/10">
+            <div className="flex flex-col items-center justify-center space-y-2">
+               <div className="flex items-center gap-2">
+                 <span className="relative flex h-3 w-3">
+                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                   <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                 </span>
+                 <span className="text-red-500 text-xs font-bold tracking-widest">AO VIVO</span>
+               </div>
+               <div className="text-white font-mono text-xl tracking-wide">
+                 {time || '--:--'}
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
     </header>
   );
 }

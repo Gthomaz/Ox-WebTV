@@ -73,12 +73,11 @@ export default function AdminPage() {
   // Watermark States
   const [watermarkUrl, setWatermarkUrl] = useState('');
   const [watermarkOpacity, setWatermarkOpacity] = useState<number>(1);
-  const [watermarkPosition, setWatermarkPosition] = useState('bottom-right');
-  
-  // Interactivity States
+  const [watermarkPosition, setWatermarkPosition] = useState<string>('bottom-right');
   const [banner, setBanner] = useState('');
   const [pollQuestion, setPollQuestion] = useState('');
-  const [pollOptionsStr, setPollOptionsStr] = useState(''); // Comma separated
+  const [pollOptionsStr, setPollOptionsStr] = useState('');
+  const [chatActive, setChatActive] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -132,6 +131,7 @@ export default function AdminPage() {
       setWatermarkPosition(data.watermark_position || 'bottom-right');
       setBanner(data.active_banner || '');
       setPollQuestion(data.active_poll_question || '');
+      setChatActive(data.chat_active || false);
       if (data.active_poll_options) {
         setPollOptionsStr(data.active_poll_options.join(', '));
       }
@@ -173,7 +173,8 @@ export default function AdminPage() {
         watermark_position: watermarkPosition,
         active_banner: banner,
         active_poll_question: pollQuestion,
-        active_poll_options: optionsArray.length > 0 ? optionsArray : null
+        active_poll_options: optionsArray.length > 0 ? optionsArray : null,
+        chat_active: chatActive
       });
 
     setIsSaving(false);
@@ -416,10 +417,17 @@ export default function AdminPage() {
     }
   };
 
-  const handleClearChat = () => {
-    // We haven't implemented a real chat backend table yet, but this is a placeholder 
-    // for the moderator action as requested.
-    alert("Comando de limpeza de chat enviado ao servidor (Placeholder).");
+  const handleClearChat = async () => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    const confirmWipe = window.confirm("Tem certeza que deseja APAGAR todas as mensagens do chat público?");
+    if (!confirmWipe) return;
+    
+    const { error } = await supabase.from('chat_messages').delete().neq('id', 0);
+    if (!error) {
+      alert("Chat limpo com sucesso!");
+    } else {
+      alert("Erro ao limpar chat: " + error.message);
+    }
   };
 
   if (!isAuthenticated) {
@@ -653,6 +661,13 @@ export default function AdminPage() {
                 </div>
               </div>
               <div className="pt-2 border-t border-white/10 mt-2">
+                <div className="flex items-center gap-4 mb-4 mt-2">
+                   <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={chatActive} onChange={() => setChatActive(!chatActive)} />
+                    <div className="w-14 h-7 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+                    <span className="ml-3 text-sm font-medium text-white">{chatActive ? 'Chat Público Ligado' : 'Chat Público Desligado'}</span>
+                  </label>
+                </div>
                 <button onClick={handleClearChat} type="button" className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors bg-red-500/10 px-4 py-2 rounded-lg mt-2">
                   <MessageSquare size={16} /> Limpar Bate-Papo do Espectador (Wipe Chat)
                 </button>
