@@ -76,6 +76,12 @@ export function Header() {
             >
               Filmes
             </Link>
+            <Link 
+              href="/#chat" 
+              className="px-5 py-2 text-sm font-bold text-[#00f0ff] bg-[#00f0ff]/10 border border-[#00f0ff]/30 rounded-lg hover:bg-[#00f0ff]/20 hover:shadow-[0_0_15px_rgba(0,240,255,0.5)] transition-all duration-300"
+            >
+              Chat ao Vivo
+            </Link>
           </nav>
           
           {/* Mobile Hamburger Button */}
@@ -125,6 +131,13 @@ export function Header() {
               className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-4 transition-colors"
             >
               Catálogo de Filmes
+            </Link>
+            <Link 
+              href="/#chat" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-lg font-bold text-[#00f0ff] hover:text-white border-b border-[#00f0ff]/30 pb-4 transition-colors"
+            >
+              💬 Chat ao Vivo
             </Link>
           </nav>
           
