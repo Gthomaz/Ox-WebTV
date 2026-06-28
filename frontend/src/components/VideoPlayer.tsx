@@ -57,6 +57,24 @@ export default function VideoPlayer() {
     }
   }, [url, useNativeFallback]);
 
+  // Sync custom controls to native video
+  useEffect(() => {
+    if (useNativeFallback && nativeVideoRef.current) {
+      if (playing) {
+        nativeVideoRef.current.play().catch(e => console.log("Native Play failed:", e));
+      } else {
+        nativeVideoRef.current.pause();
+      }
+    }
+  }, [playing, useNativeFallback]);
+
+  useEffect(() => {
+    if (useNativeFallback && nativeVideoRef.current) {
+      nativeVideoRef.current.volume = volume;
+      nativeVideoRef.current.muted = muted;
+    }
+  }, [volume, muted, useNativeFallback]);
+
   useEffect(() => {
     const fetchStatusAndPrograms = async () => {
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -108,7 +126,7 @@ export default function VideoPlayer() {
     if (data.is_live) {
       currentUrl = data.live_url;
       setUrl(currentUrl);
-      setUseNativeFallback(false);
+      setUseNativeFallback(currentUrl ? !currentUrl.includes('.m3u8') : false);
       setCurrentProgramTitle('');
     } else {
       if (data.current_video_id) {
@@ -120,7 +138,7 @@ export default function VideoPlayer() {
       }
       
       setUrl(currentUrl);
-      setUseNativeFallback(false);
+      setUseNativeFallback(currentUrl ? !currentUrl.includes('.m3u8') : false);
       
       const matchedProgram = programs.find((p: any) => p.url === currentUrl);
       setCurrentProgramTitle(matchedProgram ? matchedProgram.title : 'Programação OXTV');
