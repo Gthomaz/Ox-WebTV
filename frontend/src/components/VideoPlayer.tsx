@@ -13,6 +13,7 @@ export default function VideoPlayer() {
   const [url, setUrl] = useState<string>('');
   const [isLive, setIsLive] = useState(false);
   const [currentProgramTitle, setCurrentProgramTitle] = useState<string>('');
+  const [useNativeFallback, setUseNativeFallback] = useState(false);
   
   // Custom Controls State
   const [playing, setPlaying] = useState(true);
@@ -85,6 +86,7 @@ export default function VideoPlayer() {
     if (data.is_live) {
       currentUrl = data.live_url;
       setUrl(currentUrl);
+      setUseNativeFallback(false);
       setCurrentProgramTitle('');
     } else {
       if (data.current_video_id) {
@@ -96,6 +98,7 @@ export default function VideoPlayer() {
       }
       
       setUrl(currentUrl);
+      setUseNativeFallback(false);
       
       const matchedProgram = programs.find((p: any) => p.url === currentUrl);
       setCurrentProgramTitle(matchedProgram ? matchedProgram.title : 'Programação OXTV');
@@ -165,34 +168,52 @@ export default function VideoPlayer() {
       onMouseLeave={() => setShowControls(false)}
       className="video-container relative w-full max-w-5xl mx-auto aspect-video rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(14,75,119,0.5)] border border-white/10 group bg-black"
     >
-      <ReactPlayer
-        url={url}
-        playing={playing}
-        volume={volume}
-        muted={muted}
-        width="100%"
-        height="100%"
-        style={{ position: 'absolute', top: 0, left: 0 }}
-        onBuffer={() => setIsBuffering(true)}
-        onBufferEnd={() => setIsBuffering(false)}
-        onReady={() => setIsBuffering(false)}
-        onStart={() => setIsBuffering(false)}
-        onPlay={() => setIsBuffering(false)}
-        onError={(e: any) => {
-          console.error("VideoPlayer Error - Tentando carregar a URL:", url);
-          console.error("Detalhes do erro do ReactPlayer:", e);
-          setIsBuffering(false); // Stop loading indicator on error
-        }}
-        config={({
-          file: {
-            hlsOptions: {
-              maxBufferLength: 30,
-              maxBufferSize: 60 * 1000 * 1000,
-              lowLatencyMode: true,
+      {!useNativeFallback ? (
+        <ReactPlayer
+          url={url}
+          playing={playing}
+          volume={volume}
+          muted={muted}
+          width="100%"
+          height="100%"
+          style={{ position: 'absolute', top: 0, left: 0 }}
+          onBuffer={() => setIsBuffering(true)}
+          onBufferEnd={() => setIsBuffering(false)}
+          onReady={() => setIsBuffering(false)}
+          onStart={() => setIsBuffering(false)}
+          onPlay={() => setIsBuffering(false)}
+          onError={(e: any) => {
+            console.error("VideoPlayer Error - Tentando carregar a URL:", url);
+            console.error("Detalhes do erro do ReactPlayer:", e);
+            setIsBuffering(false);
+            setUseNativeFallback(true);
+          }}
+          config={({
+            file: {
+              hlsOptions: {
+                maxBufferLength: 30,
+                maxBufferSize: 60 * 1000 * 1000,
+                lowLatencyMode: true,
+              }
             }
-          }
-        } as any)}
-      />
+          } as any)}
+        />
+      ) : (
+        <video 
+          src={url}
+          autoPlay={playing}
+          controls={false}
+          muted={muted}
+          className="absolute inset-0 w-full h-full object-contain"
+          onPlaying={() => setIsBuffering(false)}
+          onWaiting={() => setIsBuffering(true)}
+          onError={(e) => {
+            console.error("Native Video Error", e);
+            setIsBuffering(false);
+          }}
+          playsInline
+        />
+      )}
 
       {/* Buffering Indicator */}
       {isBuffering && (

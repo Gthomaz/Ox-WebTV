@@ -300,7 +300,7 @@ export default function AdminPage() {
 
       const { error: videoError } = await supabase.storage
         .from('filmes')
-        .upload(videoPath, file, { cacheControl: '3600', upsert: false });
+        .upload(videoPath, file, { cacheControl: '3600', upsert: false, contentType: file.type || 'video/mp4' });
 
       clearInterval(progressInterval);
       if (videoError) throw videoError;
