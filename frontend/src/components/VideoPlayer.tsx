@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 import dynamic from 'next/dynamic';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2, AlertCircle } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2, AlertCircle, Cast } from 'lucide-react';
 
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;
 
@@ -253,8 +253,20 @@ export default function VideoPlayer() {
       await playerContainerRef.current.requestFullscreen().catch(err => console.error(err));
       setIsFullscreen(true);
     } else {
-      await document.exitFullscreen();
+      await document.exitFullscreen().catch(err => console.error(err));
       setIsFullscreen(false);
+    }
+  };
+
+  const handleCast = async () => {
+    try {
+      if (nativeVideoRef.current && (nativeVideoRef.current as any).remote) {
+        await (nativeVideoRef.current as any).remote.prompt();
+      } else {
+        alert("O recurso de transmissão (Cast) não é suportado pelo seu navegador atual ou nenhuma tela foi detectada.");
+      }
+    } catch (err) {
+      console.error('Erro de Cast:', err);
     }
   };
 
@@ -462,7 +474,10 @@ export default function VideoPlayer() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button onClick={toggleFullscreen} className="text-white hover:text-[#00f0ff] transition-colors p-1">
+            <button onClick={handleCast} className="text-white hover:text-[#00f0ff] transition-colors p-1" title="Transmitir para TV">
+              <Cast size={20} />
+            </button>
+            <button onClick={toggleFullscreen} className="text-white hover:text-[#00f0ff] transition-colors p-1" title="Tela Cheia">
               {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
             </button>
           </div>
