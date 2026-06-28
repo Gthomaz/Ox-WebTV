@@ -164,7 +164,8 @@ export default function AdminPage() {
 
     const { error } = await supabase
       .from('broadcast_control')
-      .update({ 
+      .upsert({ 
+        id: 1,
         is_live: isLive, 
         live_url: liveUrl,
         watermark_url: watermarkUrl,
@@ -173,8 +174,7 @@ export default function AdminPage() {
         active_banner: banner,
         active_poll_question: pollQuestion,
         active_poll_options: optionsArray.length > 0 ? optionsArray : null
-      })
-      .eq('id', 1);
+      });
 
     setIsSaving(false);
 

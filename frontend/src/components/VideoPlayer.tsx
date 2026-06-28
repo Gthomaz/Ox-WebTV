@@ -137,13 +137,8 @@ export default function VideoPlayer() {
       if (broadcastData) {
         updateState(broadcastData, programsData || []);
       } else {
-        console.error("Nenhum dado encontrado na tabela broadcast_control.");
-        if (programsData && programsData.length > 0) {
-          setUrl(programsData[0].url);
-          setCurrentProgramTitle(programsData[0].title);
-        } else {
-          setUrl('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
-        }
+        console.error("Nenhum dado encontrado na tabela broadcast_control. Usando fallback da Grade.");
+        updateState({ is_live: false, current_video_id: null }, programsData || []);
       }
     };
 
