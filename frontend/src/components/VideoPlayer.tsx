@@ -18,7 +18,7 @@ export default function VideoPlayer() {
   // Custom Controls State
   const [playing, setPlaying] = useState(true);
   const [volume, setVolume] = useState(0.8);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true); // Force muted for mobile autoplay
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [isBuffering, setIsBuffering] = useState(true);
@@ -34,6 +34,28 @@ export default function VideoPlayer() {
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const nativeVideoRef = useRef<HTMLVideoElement>(null);
+  const reactPlayerRef = useRef<any>(null);
+
+  // Force Autoplay workaround for mobile
+  useEffect(() => {
+    if (url) {
+      setTimeout(() => {
+        if (useNativeFallback && nativeVideoRef.current) {
+          nativeVideoRef.current.play().catch((e: any) => console.log("Native Autoplay blocked:", e));
+        } else if (!useNativeFallback && reactPlayerRef.current) {
+          try {
+            const internal = reactPlayerRef.current.getInternalPlayer();
+            if (internal && typeof internal.play === 'function') {
+              internal.play().catch((e: any) => console.log("ReactPlayer Autoplay blocked:", e));
+            }
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      }, 500); // Small delay to ensure DOM is ready
+    }
+  }, [url, useNativeFallback]);
 
   useEffect(() => {
     const fetchStatusAndPrograms = async () => {
@@ -170,6 +192,7 @@ export default function VideoPlayer() {
     >
       {!useNativeFallback ? (
         <ReactPlayer
+          ref={reactPlayerRef}
           url={url}
           playing={playing}
           volume={volume}
@@ -200,6 +223,7 @@ export default function VideoPlayer() {
         />
       ) : (
         <video 
+          ref={nativeVideoRef}
           src={url}
           autoPlay={playing}
           controls={false}

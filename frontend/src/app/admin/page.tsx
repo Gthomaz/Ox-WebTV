@@ -519,7 +519,7 @@ export default function AdminPage() {
         </div>
 
         {/* MÓDULO DE FILMES */}
-        <div className="lg:col-span-5 bg-[#051622] rounded-2xl border border-white/10 p-6 flex flex-col h-[75vh]">
+        <div className="lg:col-span-5 bg-[#051622] rounded-2xl border border-white/10 p-6 flex flex-col h-[50vh] lg:h-[75vh]">
           <h2 className="text-xl font-bold text-white flex items-center gap-2 border-b border-white/10 pb-4 mb-4">
             <ImageIcon className="text-[#00f0ff]" size={20} />
             Catálogo de Filmes
@@ -593,7 +593,7 @@ export default function AdminPage() {
         </div>
 
         {/* LADO DIREITO: Módulos de Controle */}
-        <div className="lg:col-span-7 flex flex-col gap-6 h-[75vh] overflow-y-auto pr-2" style={{ scrollbarWidth: 'none' }}>
+        <div className="lg:col-span-7 flex flex-col gap-6 h-auto lg:h-[75vh] overflow-y-auto pr-2 pb-10 lg:pb-0" style={{ scrollbarWidth: 'none' }}>
           
           {/* Módulo 0: Preview de Direção */}
           <div className="bg-[#051622] rounded-2xl border border-white/10 p-4 relative">
