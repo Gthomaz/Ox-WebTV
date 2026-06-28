@@ -12,7 +12,7 @@ interface ChatMessage {
   is_admin: boolean;
 }
 
-export function LiveChat({ isActive }: { isActive: boolean }) {
+export function LiveChat({ isActive, mode = 'overlay' }: { isActive: boolean, mode?: 'overlay' | 'embed' }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [nickname, setNickname] = useState('');
@@ -79,8 +79,12 @@ export function LiveChat({ isActive }: { isActive: boolean }) {
 
   if (!isActive) return null;
 
+  const containerClasses = mode === 'overlay' 
+    ? "absolute top-4 right-4 bottom-24 w-72 sm:w-80 bg-black/70 backdrop-blur-md border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl z-40 transition-all duration-300"
+    : "relative w-full h-[600px] bg-black/40 border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-xl mt-4";
+
   return (
-    <div className="absolute top-4 right-4 bottom-24 w-72 sm:w-80 bg-black/70 backdrop-blur-md border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl z-40 transition-all duration-300">
+    <div className={containerClasses}>
       
       {/* Header */}
       <div className="bg-[#051622]/90 border-b border-white/10 p-3 flex items-center justify-between">

@@ -7,6 +7,7 @@ import { Lock, Radio, Save, CheckCircle2, Plus, Trash2, CalendarClock, GripVerti
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import VideoPlayer from '@/components/VideoPlayer';
+import { LiveChat } from '@/components/LiveChat';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -672,6 +673,17 @@ export default function AdminPage() {
                   <MessageSquare size={16} /> Limpar Bate-Papo do Espectador (Wipe Chat)
                 </button>
               </div>
+              
+              {/* Backoffice Chat Room */}
+              {chatActive && (
+                <div className="mt-4 pt-4 border-t border-white/10 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <h3 className="text-sm font-bold text-[#00f0ff] mb-2 flex items-center gap-2">
+                    <MessageSquare size={16} /> Sala de Controle de Bate-Papo (Backoffice)
+                  </h3>
+                  <p className="text-xs text-white/50 mb-2">Você pode moderar e conversar com os espectadores diretamente por aqui. Entre com o apelido "Admin".</p>
+                  <LiveChat isActive={chatActive} mode="embed" />
+                </div>
+              )}
             </div>
           </div>
 
