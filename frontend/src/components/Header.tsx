@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import Logo from '@/assets/Ox-Tv-Final-Logo.png';
+import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 
 export function Header() {
   const [time, setTime] = useState<string>('');

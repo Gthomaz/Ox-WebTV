@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Logo from '@/assets/Ox-Tv-Final-Logo.png';
+import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 import { Lock, Radio, Save, CheckCircle2, Plus, Trash2, CalendarClock, GripVertical, Image as ImageIcon, MessageSquare, AlertCircle, LogOut, Upload, Film } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -571,7 +571,7 @@ export default function AdminPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-xs text-white/50 mb-1 block">URL da Imagem da Logo (PNG transparente)</label>
-                <input type="text" placeholder="/assets/Ox-Tv-Final-Logo.png" value={watermarkUrl} onChange={e => setWatermarkUrl(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-mono" />
+                <input type="text" placeholder="/assets/Ox-Tv-Logo-Transparent.png" value={watermarkUrl} onChange={e => setWatermarkUrl(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-mono" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

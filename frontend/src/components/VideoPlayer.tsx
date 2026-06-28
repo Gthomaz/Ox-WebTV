@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
-import Logo from '@/assets/Ox-Tv-Final-Logo.png';
+import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 
 export default function VideoPlayer() {
   const [url, setUrl] = useState<string>('');
