@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import ReactPlayer from 'react-player';
 import Image from 'next/image';
 import { PlayCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useSearchParams } from 'next/navigation';
 
 interface Movie {
   id: number;
@@ -14,10 +15,11 @@ interface Movie {
   video_url: string;
 }
 
-export default function FilmesPage() {
+function FilmesContent() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [activeMovieId, setActiveMovieId] = useState<number | null>(null);
   const [flippedId, setFlippedId] = useState<number | null>(null);
+  const searchParams = useSearchParams();
 
   const activeMovie = movies.find(m => m.id === activeMovieId);
 
@@ -27,10 +29,19 @@ export default function FilmesPage() {
   useEffect(() => {
     const fetchMovies = async () => {
       const { data } = await supabase.from('filmes').select('*').order('id', { ascending: false });
-      if (data) setMovies(data);
+      if (data) {
+        setMovies(data);
+        const urlId = searchParams?.get('id');
+        if (urlId) {
+          const parsedId = parseInt(urlId, 10);
+          if (!isNaN(parsedId) && data.some(m => m.id === parsedId)) {
+            setActiveMovieId(parsedId);
+          }
+        }
+      }
     };
     fetchMovies();
-  }, []);
+  }, [searchParams]);
 
   // Client-side Hydration handling for avoiding mismatches
   const [mounted, setMounted] = useState(false);
@@ -133,5 +144,13 @@ export default function FilmesPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function FilmesPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center min-h-screen bg-[#051622]"><div className="w-8 h-8 border-4 border-[#00f0ff] border-t-transparent rounded-full animate-spin"></div></div>}>
+      <FilmesContent />
+    </Suspense>
   );
 }
