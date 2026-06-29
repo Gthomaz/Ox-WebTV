@@ -313,50 +313,62 @@ export default function AdminPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      alert('Conecte o Supabase no .env para fazer upload.');
-      return;
-    }
-
     setIsUploadingVideo(true);
     setUploadVideoProgress(0);
     setIsUploadingCover(true);
     setUploadCoverProgress(0);
 
     try {
-      // 1. Gerar e Enviar Capa (Thumbnail Automática)
+      // 1. Gerar Capa (Thumbnail Automática)
       const thumbBlob = await extractThumbnail(file);
       const thumbFile = new File([thumbBlob], `cover_${Date.now()}.jpg`, { type: 'image/jpeg' });
-      const thumbPath = `filmes/cover_${Math.random().toString(36).substring(2, 15)}_${Date.now()}.jpg`;
 
-      const { error: thumbError } = await supabase.storage
-        .from('filmes')
-        .upload(thumbPath, thumbFile, { cacheControl: '3600', upsert: false });
+      // Request Presigned URL for Thumbnail
+      const thumbRes = await fetch('/api/r2-presign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: thumbFile.name, contentType: thumbFile.type })
+      });
+      if (!thumbRes.ok) throw new Error('Erro ao gerar URL da capa');
+      const { signedUrl: thumbSignedUrl, publicUrl: thumbPublicUrl } = await thumbRes.json();
 
-      if (thumbError) throw thumbError;
+      // Upload Thumbnail directly to R2
+      const thumbUpload = await fetch(thumbSignedUrl, {
+        method: 'PUT',
+        body: thumbFile,
+        headers: { 'Content-Type': thumbFile.type }
+      });
+      if (!thumbUpload.ok) throw new Error('Falha no upload da capa');
+      
       setUploadCoverProgress(100);
-      const { data: thumbUrlData } = supabase.storage.from('filmes').getPublicUrl(thumbPath);
-      setNewMovieCover(thumbUrlData.publicUrl);
+      setNewMovieCover(thumbPublicUrl);
       setIsUploadingCover(false);
 
-      // 2. Enviar Vídeo
-      const fileExt = file.name.split('.').pop();
-      const videoPath = `filmes/video_${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      // 2. Request Presigned URL for Video
+      const videoRes = await fetch('/api/r2-presign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type || 'video/mp4' })
+      });
+      if (!videoRes.ok) throw new Error('Erro ao gerar URL do vídeo');
+      const { signedUrl: videoSignedUrl, publicUrl: videoPublicUrl } = await videoRes.json();
 
       const progressInterval = setInterval(() => {
         setUploadVideoProgress(prev => prev >= 90 ? 90 : prev + 10);
-      }, 300);
+      }, 500);
 
-      const { error: videoError } = await supabase.storage
-        .from('filmes')
-        .upload(videoPath, file, { cacheControl: '3600', upsert: false, contentType: file.type || 'video/mp4' });
+      // Upload Video directly to R2
+      const videoUpload = await fetch(videoSignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type || 'video/mp4' }
+      });
 
       clearInterval(progressInterval);
-      if (videoError) throw videoError;
+      if (!videoUpload.ok) throw new Error('Falha no upload do vídeo');
 
       setUploadVideoProgress(100);
-      const { data: videoUrlData } = supabase.storage.from('filmes').getPublicUrl(videoPath);
-      setNewMovieVideo(videoUrlData.publicUrl);
+      setNewMovieVideo(videoPublicUrl);
 
       setTimeout(() => {
         setIsUploadingVideo(false);
