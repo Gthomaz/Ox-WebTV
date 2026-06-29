@@ -168,10 +168,8 @@ export default function VideoPlayer() {
     };
 
     videoObj.addEventListener('error', handleError);
-    videoObj.addEventListener('ended', playNextVideo);
     return () => {
       videoObj.removeEventListener('error', handleError);
-      videoObj.removeEventListener('ended', playNextVideo);
     };
   }, [url, useNativeFallback, playNextVideo]);
 
@@ -434,6 +432,7 @@ export default function VideoPlayer() {
             }
             setIsBuffering(false);
           }}
+          onEnded={playNextVideo}
           playsInline
         />
       )}
