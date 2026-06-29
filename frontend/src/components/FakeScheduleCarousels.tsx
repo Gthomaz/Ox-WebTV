@@ -40,7 +40,7 @@ export function FakeScheduleCarousels() {
   };
 
   return (
-    <div className="w-full flex flex-col mt-12 space-y-12">
+    <div className="w-full flex flex-col space-y-10">
       
       {CAROUSEL_CATEGORIES.map((category, catIdx) => {
         const programs = getShuffledPrograms();
@@ -51,7 +51,7 @@ export function FakeScheduleCarousels() {
           <div key={category} className="w-full">
             <div className="flex flex-col px-4 md:px-0 mb-3">
               <h2 className="text-xl md:text-2xl font-bold text-white tracking-wide mb-2">{category}</h2>
-              <div className="h-[2px] w-1/3 bg-gradient-to-r from-red-600 to-yellow-400 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.5)] opacity-60"></div>
+              <div className="h-[2px] w-full bg-gradient-to-r from-red-600 to-yellow-400 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
             </div>
             
             <div className="relative w-full bg-black/20 border-y border-white/5 py-4 overflow-hidden group">
