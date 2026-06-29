@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 import { Lock, Radio, Save, CheckCircle2, Plus, Trash2, CalendarClock, GripVertical, Image as ImageIcon, MessageSquare, AlertCircle, LogOut, Upload, Film, MonitorPlay } from 'lucide-react';
+import { AdminPoll } from '@/components/AdminPoll';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import VideoPlayer from '@/components/VideoPlayer';
@@ -819,6 +820,9 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+
+          {/* Módulo 4: Enquetes Semanais */}
+          <AdminPoll />
 
         </div>
 

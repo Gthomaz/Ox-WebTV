@@ -60,7 +60,7 @@ export function MoviesCarousels() {
               <div className="flex gap-4 px-4 md:px-0 w-max">
                 {rowMovies.map((movie, idx) => (
                   <Link 
-                    href="/filmes" 
+                    href={`/filmes?id=${movie.id}`}
                     key={`${movie.id}-${idx}`}
                     className="w-[220px] md:w-[280px] h-[340px] flex-shrink-0 rounded-xl overflow-hidden relative group cursor-pointer border border-white/10 hover:border-[#00f0ff] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,240,255,0.3)]"
                   >

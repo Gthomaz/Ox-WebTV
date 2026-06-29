@@ -3,9 +3,11 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import ReactPlayer from 'react-player';
 import Image from 'next/image';
-import { PlayCircle } from 'lucide-react';
+import { PlayCircle, MessageSquare, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSearchParams } from 'next/navigation';
+import { MoviesPoll } from '@/components/MoviesPoll';
+import { LiveChat } from '@/components/LiveChat';
 
 interface Movie {
   id: number;
@@ -18,6 +20,7 @@ interface Movie {
 function FilmesContent() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [activeMovieId, setActiveMovieId] = useState<number | null>(null);
+  const [showChat, setShowChat] = useState(false);
   const searchParams = useSearchParams();
 
   const activeMovie = movies.find(m => m.id === activeMovieId);
@@ -128,6 +131,38 @@ function FilmesContent() {
           )}
         </div>
 
+        {/* Módulo de Votação (Enquetes Semanais) */}
+        <div className="pt-8 mt-12 border-t border-white/10">
+          <MoviesPoll />
+        </div>
+
+      </div>
+
+      {/* Floating Chat Button for Movies */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+        {showChat && (
+          <div className="w-[350px] h-[500px] max-h-[80vh] bg-[#051622]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-8">
+            <div className="p-4 bg-gradient-to-r from-[#0e4b77] to-transparent border-b border-white/10 flex justify-between items-center">
+              <h3 className="text-white font-bold flex items-center gap-2">
+                <MessageSquare size={18} />
+                Comunidade Cinéfila
+              </h3>
+              <button onClick={() => setShowChat(false)} className="text-white/60 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden relative">
+              <LiveChat isActive={true} mode="embed" />
+            </div>
+          </div>
+        )}
+        
+        <button 
+          onClick={() => setShowChat(!showChat)}
+          className={`p-4 rounded-full shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all transform hover:scale-110 ${showChat ? 'bg-red-500 text-white shadow-red-500/40' : 'bg-[#00f0ff] text-[#051622]'}`}
+        >
+          {showChat ? <X size={24} /> : <MessageSquare size={24} />}
+        </button>
       </div>
     </div>
   );
