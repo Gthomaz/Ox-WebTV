@@ -61,7 +61,7 @@ function FilmesContent() {
         {/* Title area */}
         <div className="text-center md:text-left space-y-4">
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white drop-shadow-[0_0_15px_rgba(0,240,255,0.2)]">
-            Catálogo de <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00f0ff] to-white">Filmes</span>
+            Filmes <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00f0ff] to-white">Sugeridos</span>
           </h1>
           <p className="text-white/60 font-light">
             Escolha um título e assista sob demanda.

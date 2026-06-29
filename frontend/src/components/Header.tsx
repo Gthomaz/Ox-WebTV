@@ -111,7 +111,7 @@ export function Header() {
               href="/filmes" 
               className="px-5 py-2 text-sm font-medium text-white/90 bg-transparent border border-white/20 rounded-lg hover:border-[#00f0ff] hover:text-[#00f0ff] hover:shadow-[0_0_12px_rgba(0,240,255,0.4)] transition-all duration-300"
             >
-              Filmes
+              Filmes Sugeridos
             </Link>
             <Link 
               href="/#chat" 
@@ -167,7 +167,7 @@ export function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
               className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-4 transition-colors"
             >
-              Catálogo de Filmes
+              Filmes Sugeridos
             </Link>
             <Link 
               href="/#chat" 
