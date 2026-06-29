@@ -95,39 +95,41 @@ export function ProgramSchedule() {
           )}
         </div>
 
-        {/* Desktop: Horizontal Scroll */}
-        <div className="hidden md:flex w-full overflow-x-auto pb-4 gap-6 px-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#00f0ff transparent' }}>
-          {programs.map((program, idx) => (
-            <div 
-              key={`desktop-${program.id}-${idx}`}
-              className="w-[320px] flex-shrink-0 rounded-2xl overflow-hidden relative group bg-black border border-white/10 hover:border-[#00f0ff]/50 transition-colors cursor-pointer"
-            >
-              <div className="absolute inset-0 z-0">
-                {program.thumbnail_url ? (
-                  <img src={program.thumbnail_url} alt={program.title} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#0e4b77] to-[#051622] opacity-80" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
-              </div>
-              <div className="relative z-10 p-5 h-[160px] flex flex-col justify-end">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex flex-col items-start gap-1">
-                    <span className="text-[10px] font-bold text-white/70 bg-black/50 px-1.5 py-0.5 rounded border border-white/5">{formatDate(program.start_time)}</span>
-                    <div className="flex items-center gap-1.5 text-[#00f0ff] font-mono text-xs bg-[#00f0ff]/10 px-2 py-1 rounded">
-                      <Clock size={14} />
-                      {formatTime(program.start_time)}
-                    </div>
-                  </div>
-                  <PlayCircle size={24} className="text-white/50 group-hover:text-[#00f0ff] transition-colors mt-1" />
+        {/* Desktop: Infinite Marquee Carousel */}
+        <div className="hidden md:flex w-full overflow-hidden pb-4 group relative">
+          <div className="flex gap-6 animate-marquee hover:[animation-play-state:paused] w-max px-4">
+            {[...programs, ...programs].map((program, idx) => (
+              <div 
+                key={`desktop-${program.id}-${idx}`}
+                className="w-[320px] flex-shrink-0 rounded-2xl overflow-hidden relative group/card bg-black border border-white/10 hover:border-[#00f0ff]/50 transition-colors cursor-pointer"
+              >
+                <div className="absolute inset-0 z-0">
+                  {program.thumbnail_url ? (
+                    <img src={program.thumbnail_url} alt={program.title} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover/card:opacity-60 transition-opacity duration-500" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-[#0e4b77] to-[#051622] opacity-80" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
                 </div>
-                <h3 className="text-lg font-bold text-white leading-tight mb-1 line-clamp-1">{program.title}</h3>
-                {program.description && (
-                  <p className="text-sm text-white/60 line-clamp-1">{program.description}</p>
-                )}
+                <div className="relative z-10 p-5 h-[160px] flex flex-col justify-end">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex flex-col items-start gap-1">
+                      <span className="text-[10px] font-bold text-white/70 bg-black/50 px-1.5 py-0.5 rounded border border-white/5">{formatDate(program.start_time)}</span>
+                      <div className="flex items-center gap-1.5 text-[#00f0ff] font-mono text-xs bg-[#00f0ff]/10 px-2 py-1 rounded">
+                        <Clock size={14} />
+                        {formatTime(program.start_time)}
+                      </div>
+                    </div>
+                    <PlayCircle size={24} className="text-white/50 group-hover/card:text-[#00f0ff] transition-colors mt-1" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white leading-tight mb-1 line-clamp-1">{program.title}</h3>
+                  {program.description && (
+                    <p className="text-sm text-white/60 line-clamp-1">{program.description}</p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
           {programs.length === 0 && (
              <div className="text-white/40 py-4 text-sm text-center w-full">Nenhum programa na grade no momento.</div>
           )}
