@@ -18,13 +18,11 @@ interface Movie {
 function FilmesContent() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [activeMovieId, setActiveMovieId] = useState<number | null>(null);
-  const [flippedId, setFlippedId] = useState<number | null>(null);
   const searchParams = useSearchParams();
 
   const activeMovie = movies.find(m => m.id === activeMovieId);
 
   const fallbackImage = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=600&auto=format&fit=crop";
-  const fallbackDesc = "Um clássico imperdível que vai prender sua atenção do início ao fim. Prepare a pipoca e embarque nesta aventura épica cheia de emoção, suspense e reviravoltas inesquecíveis!";
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -95,43 +93,31 @@ function FilmesContent() {
         )}
 
         {/* Catalog Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 [perspective:1000px]">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8">
           {movies.map(movie => (
             <div
               key={movie.id}
-              onClick={() => setFlippedId(flippedId === movie.id ? null : movie.id)}
-              className={`relative aspect-[2/3] rounded-xl cursor-pointer group transition-all duration-700 [transform-style:preserve-3d] md:hover:[transform:rotateY(180deg)] ${flippedId === movie.id ? '[transform:rotateY(180deg)]' : ''} ${activeMovieId === movie.id ? 'shadow-[0_0_20px_rgba(0,240,255,0.4)] scale-[1.02]' : 'md:hover:scale-[1.03] md:hover:shadow-[0_0_20px_rgba(0,240,255,0.2)]'}`}
+              onClick={() => {
+                setActiveMovieId(movie.id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`relative aspect-[2/3] rounded-xl cursor-pointer group overflow-hidden border transition-all duration-300 ${activeMovieId === movie.id ? 'border-[#00f0ff] shadow-[0_0_20px_rgba(0,240,255,0.5)] scale-[1.02]' : 'border-white/10 hover:border-[#00f0ff] hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,240,255,0.3)]'}`}
             >
-              {/* Frente do Card */}
-              <div className="absolute inset-0 [backface-visibility:hidden] rounded-xl overflow-hidden border border-white/10">
-                <Image
-                  src={movie.cover_url || fallbackImage}
-                  alt={movie.title}
-                  fill
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#051622] via-[#051622]/40 to-transparent opacity-90"></div>
-                <div className="absolute bottom-0 left-0 w-full p-4 pointer-events-none">
-                  <h3 className="text-white font-bold text-lg line-clamp-2 leading-tight drop-shadow-md">{movie.title}</h3>
-                </div>
-              </div>
-
-              {/* Verso do Card */}
-              <div 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveMovieId(movie.id);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="absolute inset-0 h-full w-full rounded-xl bg-gradient-to-br from-[#0e4b77] to-[#051622] border border-[#00f0ff]/30 p-4 [transform:rotateY(180deg)] [backface-visibility:hidden] flex flex-col items-center justify-center text-center overflow-hidden"
-              >
-                <h3 className="text-white font-bold text-lg mb-2">{movie.title}</h3>
-                <p className="text-white/70 text-sm line-clamp-5 mb-4">{movie.description || fallbackDesc}</p>
-                <button className="flex items-center gap-2 bg-[#00f0ff]/20 hover:bg-[#00f0ff]/40 border border-[#00f0ff] text-white px-4 py-2 rounded-full transition-colors">
-                  <PlayCircle size={18} />
-                  Assistir
-                </button>
+              <Image
+                src={movie.cover_url || fallbackImage}
+                alt={movie.title}
+                fill
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+                className="object-cover group-hover:scale-110 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
+              
+              <div className="absolute inset-0 p-4 flex flex-col justify-end transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                <PlayCircle size={40} className={`mb-3 transition-colors ${activeMovieId === movie.id ? 'text-[#00f0ff]' : 'text-white/80 group-hover:text-[#00f0ff]'}`} />
+                <h3 className="text-base md:text-lg font-bold text-white leading-tight mb-1 line-clamp-2">{movie.title}</h3>
+                {movie.description && (
+                  <p className="text-xs text-white/60 line-clamp-2">{movie.description}</p>
+                )}
               </div>
             </div>
           ))}
