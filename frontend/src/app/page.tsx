@@ -3,6 +3,8 @@
 import React, { useEffect } from 'react';
 import VideoPlayer from "@/components/VideoPlayer";
 import { ProgramSchedule } from "@/components/ProgramSchedule";
+import { MoviesCarousels } from "@/components/MoviesCarousels";
+import { ChatSection } from "@/components/ChatSection";
 import Link from "next/link";
 
 export default function Home() {
@@ -36,6 +38,14 @@ export default function Home() {
         <div className="w-full">
           <ProgramSchedule />
         </div>
+
+        {/* Special Movies Carousels */}
+        <div className="w-full">
+          <MoviesCarousels />
+        </div>
+
+        {/* Live Chat Section */}
+        <ChatSection />
 
       </div>
 
