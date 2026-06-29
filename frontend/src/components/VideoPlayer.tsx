@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase';
 import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 import dynamic from 'next/dynamic';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2, AlertCircle, Cast } from 'lucide-react';
-import { LiveChat } from './LiveChat';
 
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;
 
@@ -45,6 +44,24 @@ export default function VideoPlayer() {
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const nativeVideoRef = useRef<HTMLVideoElement>(null);
   const reactPlayerRef = useRef<any>(null);
+
+  // Initialize Google Cast API
+  useEffect(() => {
+    (window as any).__onGCastApiAvailable = function(isAvailable: boolean) {
+      if (isAvailable && typeof (window as any).cast !== 'undefined') {
+        const castContext = (window as any).cast.framework.CastContext.getInstance();
+        try {
+          castContext.setOptions({
+            receiverApplicationId: (window as any).chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+            autoJoinPolicy: (window as any).chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+          });
+          console.log("CastContext Initialized");
+        } catch (err) {
+          console.error("CastContext init error", err);
+        }
+      }
+    };
+  }, []);
 
   // Force Autoplay workaround for mobile
   useEffect(() => {
@@ -277,13 +294,48 @@ export default function VideoPlayer() {
 
   const handleCast = async () => {
     try {
-      if (nativeVideoRef.current && (nativeVideoRef.current as any).remote) {
-        await (nativeVideoRef.current as any).remote.prompt();
-      } else {
-        alert("O recurso de transmissão (Cast) não é suportado pelo seu navegador atual ou nenhuma tela foi detectada.");
+      const cast = (window as any).cast;
+      const chrome = (window as any).chrome;
+      
+      if (!cast || !cast.framework) {
+        alert("O SDK do Chromecast ainda está carregando ou não é suportado pelo seu navegador atual.");
+        return;
       }
+      
+      const castContext = cast.framework.CastContext.getInstance();
+      
+      try {
+        await castContext.requestSession();
+      } catch (err) {
+        if (err !== 'cancel') {
+          console.error("Erro ao iniciar sessão do Cast:", err);
+          alert("Não foi possível conectar à TV.");
+        }
+        return;
+      }
+      
+      const session = castContext.getCurrentSession();
+      if (!session) return;
+      
+      const contentType = url.includes('.m3u8') ? 'application/x-mpegurl' : 'video/mp4';
+      
+      const mediaInfo = new chrome.cast.media.MediaInfo(url, contentType);
+      mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
+      mediaInfo.metadata.title = currentProgramTitle || 'OX TV';
+      if (watermarkUrl || Logo) {
+        const imgUrl = watermarkUrl ? watermarkUrl : (typeof Logo === 'string' ? Logo : Logo.src);
+        mediaInfo.metadata.images = [{ url: imgUrl }];
+      }
+      
+      const request = new chrome.cast.media.LoadRequest(mediaInfo);
+      request.autoplay = true;
+      
+      await session.loadMedia(request);
+      console.log("Mídia enviada para o Chromecast com sucesso!");
+      
     } catch (err) {
-      console.error('Erro de Cast:', err);
+      console.error('Erro de Cast detalhado:', err);
+      alert("Falha ao transmitir o vídeo para a TV.");
     }
   };
 
@@ -484,9 +536,6 @@ export default function VideoPlayer() {
            </div>
         )}
       </div>
-
-      {/* Live Chat Overlay */}
-      <LiveChat isActive={isChatActive} />
 
       {/* Custom Controls Bar */}
       <div className={`absolute bottom-0 left-0 right-0 z-30 px-4 py-4 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-500 ${showControls || !playing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Header } from "@/components/Header";
 import { AdminProvider } from "@/contexts/AdminContext";
 import { Footer } from "@/components/Footer";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,6 +37,7 @@ export default function RootLayout({
           <main className="flex-1 flex flex-col relative">{children}</main>
           <Footer />
         </AdminProvider>
+        <Script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1" strategy="beforeInteractive" />
       </body>
     </html>
   );
