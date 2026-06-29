@@ -74,8 +74,10 @@ export default function AdminPage() {
   
   // Watermark States
   const [watermarkUrl, setWatermarkUrl] = useState('');
-  const [watermarkOpacity, setWatermarkOpacity] = useState<number>(1);
-  const [watermarkPosition, setWatermarkPosition] = useState<string>('bottom-right');
+  const [watermarkOpacity, setWatermarkOpacity] = useState(1);
+  const [watermarkHPos, setWatermarkHPos] = useState(95);
+  const [watermarkVPos, setWatermarkVPos] = useState(95);
+  const [watermarkSize, setWatermarkSize] = useState(100);
   const [banner, setBanner] = useState('');
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptionsStr, setPollOptionsStr] = useState('');
@@ -130,7 +132,9 @@ export default function AdminPage() {
       setLiveUrl(data.live_url || '');
       setWatermarkUrl(data.watermark_url || '');
       setWatermarkOpacity(data.watermark_opacity ?? 1);
-      setWatermarkPosition(data.watermark_position || 'bottom-right');
+      setWatermarkHPos(data.watermark_h_pos ?? 95);
+      setWatermarkVPos(data.watermark_v_pos ?? 95);
+      setWatermarkSize(data.watermark_size ?? 100);
       setBanner(data.active_banner || '');
       setPollQuestion(data.active_poll_question || '');
       setChatActive(data.chat_active || false);
@@ -172,7 +176,9 @@ export default function AdminPage() {
         live_url: liveUrl,
         watermark_url: watermarkUrl,
         watermark_opacity: watermarkOpacity,
-        watermark_position: watermarkPosition,
+        watermark_h_pos: watermarkHPos,
+        watermark_v_pos: watermarkVPos,
+        watermark_size: watermarkSize,
         active_banner: banner,
         active_poll_question: pollQuestion,
         active_poll_options: optionsArray.length > 0 ? optionsArray : null,
@@ -778,23 +784,36 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="text-xs text-white/50 mb-1 flex justify-between">
-                    <span>Opacidade</span>
-                    <span>{Math.round(watermarkOpacity * 100)}%</span>
+                    <span>Posição Horizontal (Esq ↔ Dir)</span>
+                    <span className="text-[#00f0ff]">{watermarkHPos}%</span>
                   </label>
-                  <input type="range" min="0" max="1" step="0.1" value={watermarkOpacity} onChange={e => setWatermarkOpacity(parseFloat(e.target.value))} className="w-full accent-purple-500" />
+                  <input type="range" min="0" max="100" value={watermarkHPos} onChange={e => setWatermarkHPos(parseInt(e.target.value))} className="w-full accent-[#00f0ff]" />
                 </div>
                 <div>
-                  <label className="text-xs text-white/50 mb-1 block">Posição</label>
-                  <select value={watermarkPosition} onChange={e => setWatermarkPosition(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none">
-                    <option value="top-left">Canto Superior Esquerdo</option>
-                    <option value="top-right">Canto Superior Direito</option>
-                    <option value="bottom-left">Canto Inferior Esquerdo</option>
-                    <option value="bottom-right">Canto Inferior Direito</option>
-                  </select>
+                  <label className="text-xs text-white/50 mb-1 flex justify-between">
+                    <span>Posição Vertical (Cima ↕ Baixo)</span>
+                    <span className="text-[#00f0ff]">{watermarkVPos}%</span>
+                  </label>
+                  <input type="range" min="0" max="100" value={watermarkVPos} onChange={e => setWatermarkVPos(parseInt(e.target.value))} className="w-full accent-[#00f0ff]" />
+                </div>
+                <div>
+                  <label className="text-xs text-white/50 mb-1 flex justify-between">
+                    <span>Tamanho da Logo</span>
+                    <span className="text-[#00f0ff]">{watermarkSize}%</span>
+                  </label>
+                  <input type="range" min="10" max="300" value={watermarkSize} onChange={e => setWatermarkSize(parseInt(e.target.value))} className="w-full accent-purple-500" />
+                </div>
+                <div>
+                  <label className="text-xs text-white/50 mb-1 flex justify-between">
+                    <span>Transparência (Visibilidade)</span>
+                    <span className="text-purple-400">{Math.round(watermarkOpacity * 100)}%</span>
+                  </label>
+                  <input type="range" min="0" max="1" step="0.05" value={watermarkOpacity} onChange={e => setWatermarkOpacity(parseFloat(e.target.value))} className="w-full accent-purple-500" />
                 </div>
               </div>
               <div className="pt-4 border-t border-white/10 mt-4 flex justify-end">
                 <button onClick={handleSaveControl} disabled={isSaving} className="bg-purple-600/50 border border-purple-500 hover:bg-purple-500 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center gap-2">
+                  <Save size={16} />
                   {isSaving ? 'Salvando...' : 'Salvar Marca D\'água'}
                 </button>
               </div>

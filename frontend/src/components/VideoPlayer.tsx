@@ -31,7 +31,9 @@ export default function VideoPlayer() {
   // New States from DB
   const [watermarkUrl, setWatermarkUrl] = useState<string>('');
   const [watermarkOpacity, setWatermarkOpacity] = useState<number>(1);
-  const [watermarkPosition, setWatermarkPosition] = useState<string>('bottom-right');
+  const [watermarkHPos, setWatermarkHPos] = useState<number>(95);
+  const [watermarkVPos, setWatermarkVPos] = useState<number>(95);
+  const [watermarkSize, setWatermarkSize] = useState<number>(100);
   const [activeBanner, setActiveBanner] = useState<string>('');
   
   // Interactive Polling and Chat
@@ -248,7 +250,9 @@ export default function VideoPlayer() {
     
     setWatermarkUrl(data.watermark_url || '');
     setWatermarkOpacity(data.watermark_opacity ?? 1);
-    setWatermarkPosition(data.watermark_position || 'bottom-right');
+    setWatermarkHPos(data.watermark_h_pos ?? 95);
+    setWatermarkVPos(data.watermark_v_pos ?? 95);
+    setWatermarkSize(data.watermark_size ?? 100);
     setActiveBanner(data.active_banner || '');
     
     setPollQuestion((prev) => {
@@ -259,15 +263,7 @@ export default function VideoPlayer() {
     setIsChatActive(data.chat_active || false);
   };
 
-  const getWatermarkClasses = () => {
-    switch (watermarkPosition) {
-      case 'top-left': return 'top-20 left-4'; 
-      case 'top-right': return 'top-4 right-4';
-      case 'bottom-left': return 'bottom-20 left-4'; 
-      case 'bottom-right': return 'bottom-20 right-4';
-      default: return 'bottom-20 right-4';
-    }
-  };
+
 
   const handleMouseMove = useCallback(() => {
     setShowControls(true);
@@ -491,8 +487,13 @@ export default function VideoPlayer() {
       {/* Watermark Dinâmico */}
       {(watermarkUrl || Logo) && (
         <div 
-          className={`absolute z-10 pointer-events-none transition-opacity duration-300 ${getWatermarkClasses()}`}
-          style={{ opacity: watermarkOpacity }}
+          className="absolute z-10 pointer-events-none transition-all duration-300"
+          style={{ 
+            opacity: watermarkOpacity,
+            left: `${watermarkHPos}%`,
+            top: `${watermarkVPos}%`,
+            transform: `translate(-50%, -50%) scale(${watermarkSize / 100})`
+          }}
         >
           {watermarkUrl ? (
             <img src={watermarkUrl} alt="Watermark" className="h-12 w-auto object-contain drop-shadow-md" />
