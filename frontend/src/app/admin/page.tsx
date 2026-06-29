@@ -329,7 +329,10 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename: thumbFile.name, contentType: thumbFile.type })
       });
-      if (!thumbRes.ok) throw new Error('Erro ao gerar URL da capa');
+      if (!thumbRes.ok) {
+        const errorData = await thumbRes.json().catch(() => ({}));
+        throw new Error(`Capa: ${errorData.error || thumbRes.statusText}`);
+      }
       const { signedUrl: thumbSignedUrl, publicUrl: thumbPublicUrl } = await thumbRes.json();
 
       // Upload Thumbnail directly to R2
@@ -350,7 +353,10 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename: file.name, contentType: file.type || 'video/mp4' })
       });
-      if (!videoRes.ok) throw new Error('Erro ao gerar URL do vídeo');
+      if (!videoRes.ok) {
+        const errorData = await videoRes.json().catch(() => ({}));
+        throw new Error(`Vídeo: ${errorData.error || videoRes.statusText}`);
+      }
       const { signedUrl: videoSignedUrl, publicUrl: videoPublicUrl } = await videoRes.json();
 
       const progressInterval = setInterval(() => {
