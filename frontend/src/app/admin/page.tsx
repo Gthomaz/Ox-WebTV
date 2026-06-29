@@ -189,6 +189,15 @@ export default function AdminPage() {
     }
   };
 
+  const toggleLiveStatus = async () => {
+    const newStatus = !isLive;
+    setIsLive(newStatus);
+    
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      await supabase.from('broadcast_control').update({ is_live: newStatus }).eq('id', 1);
+    }
+  };
+
   const handleAddProgram = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAdding(true);
@@ -674,12 +683,18 @@ export default function AdminPage() {
               <Radio className={isLive ? "text-red-500 animate-pulse" : "text-white/40"} size={20} />
               Sinal Mestre
             </h2>
-            <div className="flex items-center gap-4 mb-4">
-               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" checked={isLive} onChange={() => setIsLive(!isLive)} />
-                <div className="w-14 h-7 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-500"></div>
-                <span className="ml-3 text-sm font-medium text-white">{isLive ? 'Transmissão Ao Vivo Ativa' : 'Grade Agendada Ativa'}</span>
-              </label>
+            <div className="flex flex-col mb-4">
+              <div className="flex items-center gap-4">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" checked={isLive} onChange={toggleLiveStatus} />
+                  <div className="w-14 h-7 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-500"></div>
+                  <span className="ml-3 text-sm font-medium text-white">{isLive ? 'Link Externo (Sinal Mestre)' : 'Programação (Grade)'}</span>
+                </label>
+              </div>
+              <div className="text-xs text-white/50 mt-3 p-3 bg-black/30 rounded-lg border border-white/5">
+                <p className="mb-1"><strong className="text-red-400">🔴 VERMELHO (AO VIVO):</strong> Corta a grade e ativa o Link M3U8 para OBS, repórteres de rua ou programas gravados ao vivo como podcasts.</p>
+                <p><strong className="text-white">⚪ BRANCO (GRADE):</strong> Toca a programação normal da Grade de Vídeos (Padrão).</p>
+              </div>
             </div>
             <input type="url" placeholder="URL do Sinal Ao Vivo (M3U8 / MP4)" value={liveUrl} onChange={e => setLiveUrl(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-red-500 font-mono text-sm" />
           </div>
