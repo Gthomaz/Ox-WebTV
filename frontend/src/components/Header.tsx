@@ -6,9 +6,12 @@ import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 
+import { supabase } from '@/lib/supabase';
+
 export function Header() {
   const [time, setTime] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLive, setIsLive] = useState(false);
 
   useEffect(() => {
     const updateClock = () => {
@@ -21,7 +24,32 @@ export function Header() {
     
     // Update every second (or minute, but second ensures it ticks exactly when minute changes)
     const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
+
+    // Fetch initial live status
+    const fetchLiveStatus = async () => {
+      const { data } = await supabase.from('broadcast_control').select('is_live').single();
+      if (data) setIsLive(data.is_live);
+    };
+    fetchLiveStatus();
+
+    // Listen for changes
+    let channel: any;
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      channel = supabase
+        .channel('header-live-status')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'broadcast_control' }, (payload) => {
+          const newData = payload.new as any;
+          if (newData && typeof newData.is_live !== 'undefined') {
+            setIsLive(newData.is_live);
+          }
+        })
+        .subscribe();
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   return (
@@ -49,13 +77,22 @@ export function Header() {
 
         {/* Center: Clock and Status */}
         <div className="hidden sm:flex flex-col items-center justify-center space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-            </span>
-            <span className="text-red-500 text-xs font-bold tracking-widest">AO VIVO</span>
-          </div>
+          {isLive ? (
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+              <span className="text-red-500 text-xs font-bold tracking-widest">AO VIVO</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-white/50"></span>
+              </span>
+              <span className="text-white/60 text-xs font-bold tracking-widest">GRADE</span>
+            </div>
+          )}
           <div className="text-white/90 font-mono text-2xl font-light tracking-wide">
             {time || '--:--'}
           </div>
@@ -143,13 +180,22 @@ export function Header() {
           
           <div className="mt-auto pt-8 border-t border-white/10">
             <div className="flex flex-col items-center justify-center space-y-2">
-               <div className="flex items-center gap-2">
-                 <span className="relative flex h-3 w-3">
-                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                   <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                 </span>
-                 <span className="text-red-500 text-xs font-bold tracking-widest">AO VIVO</span>
-               </div>
+               {isLive ? (
+                 <div className="flex items-center gap-2">
+                   <span className="relative flex h-3 w-3">
+                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                     <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                   </span>
+                   <span className="text-red-500 text-xs font-bold tracking-widest">AO VIVO</span>
+                 </div>
+               ) : (
+                 <div className="flex items-center gap-2">
+                   <span className="relative flex h-3 w-3">
+                     <span className="relative inline-flex rounded-full h-3 w-3 bg-white/50"></span>
+                   </span>
+                   <span className="text-white/60 text-xs font-bold tracking-widest">GRADE</span>
+                 </div>
+               )}
                <div className="text-white font-mono text-xl tracking-wide">
                  {time || '--:--'}
                </div>
