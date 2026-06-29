@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect } from 'react';
 import { ProgramSchedule } from "@/components/ProgramSchedule";
+import { FakeScheduleCarousels } from "@/components/FakeScheduleCarousels";
 
 export default function GradePage() {
   useEffect(() => {
@@ -22,6 +23,9 @@ export default function GradePage() {
         </div>
         <div className="w-full">
           <ProgramSchedule />
+        </div>
+        <div className="w-full">
+          <FakeScheduleCarousels />
         </div>
       </div>
     </div>
