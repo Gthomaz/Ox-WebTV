@@ -137,7 +137,16 @@ export default function VideoPlayer() {
       } else {
         errorDetails = "Sem código de erro. Possível CORS rigoroso ou arquivo ausente.";
       }
-      setPlayerErrorMsg(`ALERTA TÉCNICO: ${errorDetails} | Src: ${videoObj.src}`);
+      
+      if (isLive) {
+        console.log("Transmissão Ao Vivo (M3U8) caiu. Voltando para Grade automaticamente...");
+        if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+          supabase.from('broadcast_control').update({ is_live: false }).eq('id', 1).then(() => {});
+        }
+      } else {
+        setPlayerErrorMsg(`ALERTA TÉCNICO: ${errorDetails} | Src: ${videoObj.src}`);
+      }
+      
       setIsBuffering(false);
     };
 
@@ -314,10 +323,20 @@ export default function VideoPlayer() {
           onReady={() => setIsBuffering(false)}
           onStart={() => setIsBuffering(false)}
           onPlay={() => setIsBuffering(false)}
-          onEnded={playNextVideo}
+          onEnded={() => {
+            if (isLive && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+               supabase.from('broadcast_control').update({ is_live: false }).eq('id', 1).then(() => {});
+            } else {
+               playNextVideo();
+            }
+          }}
           onError={(e: any) => {
             console.error("VideoPlayer Error - URL:", url, e);
-            setPlayerErrorMsg(`ReactPlayer Error: Falha ao carregar HLS. Motivo: ${e?.type || e?.message || 'Media não suportada ou CORS.'} | URL: ${url}`);
+            if (isLive && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+              supabase.from('broadcast_control').update({ is_live: false }).eq('id', 1).then(() => {});
+            } else {
+              setPlayerErrorMsg(`ReactPlayer Error: Falha ao carregar HLS. Motivo: ${e?.type || e?.message || 'Media não suportada ou CORS.'} | URL: ${url}`);
+            }
             setIsBuffering(false);
           }}
           config={({
@@ -356,7 +375,11 @@ export default function VideoPlayer() {
                 default: errorDetails = `${mediaError.code}: Erro genérico na mídia.`; break;
               }
             }
-            setPlayerErrorMsg(`Native Video Error: ${errorDetails} | Src: ${url}`);
+            if (isLive && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+              supabase.from('broadcast_control').update({ is_live: false }).eq('id', 1).then(() => {});
+            } else {
+              setPlayerErrorMsg(`Native Video Error: ${errorDetails} | Src: ${url}`);
+            }
             setIsBuffering(false);
           }}
           playsInline
