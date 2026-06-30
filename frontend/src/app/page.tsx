@@ -20,9 +20,6 @@ export default function Home() {
         
         {/* Title area */}
         <div className="text-center space-y-4">
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white drop-shadow-[0_0_15px_rgba(0,240,255,0.2)]">
-            OX Web<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00f0ff] to-white">TV</span>
-          </h1>
           <p className="text-white/60 max-w-2xl mx-auto font-light">
             Acompanhe nossa programação ao vivo ou as melhores gravações.
           </p>
