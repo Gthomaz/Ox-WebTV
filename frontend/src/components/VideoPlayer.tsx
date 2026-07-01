@@ -232,10 +232,46 @@ export default function VideoPlayer() {
       }
     } else {
       if (programs && programs.length > 0) {
-        if (currentIndexRef.current >= programs.length) {
-          currentIndexRef.current = 0;
+        // --- GLOBAL SYNC LOGIC ---
+        let totalDuration = 0;
+        programs.forEach(p => {
+          totalDuration += (p.duration_seconds || 3600); // fallback 1 hora
+        });
+        
+        // Ponto Zero (Epoch Fixo para sincronizar globalmente)
+        // Usamos uma data fixa no passado para garantir consistência
+        const epochTime = new Date('2024-01-01T00:00:00Z').getTime();
+        const now = Date.now();
+        const elapsedSeconds = Math.max(0, Math.floor((now - epochTime) / 1000));
+        
+        const currentPositionInLoop = elapsedSeconds % totalDuration;
+        
+        let accumulated = 0;
+        let activeIndex = 0;
+        let seekSeconds = 0;
+        
+        for (let i = 0; i < programs.length; i++) {
+          const duration = programs[i].duration_seconds || 3600;
+          if (currentPositionInLoop < accumulated + duration) {
+            activeIndex = i;
+            seekSeconds = currentPositionInLoop - accumulated;
+            break;
+          }
+          accumulated += duration;
         }
-        currentUrl = programs[currentIndexRef.current].url;
+        
+        currentIndexRef.current = activeIndex;
+        currentUrl = programs[activeIndex].url;
+        
+        // Agenda o avanço do vídeo (Seek)
+        setTimeout(() => {
+          if (!currentUrl.includes('.m3u8') && nativeVideoRef.current) {
+            nativeVideoRef.current.currentTime = seekSeconds;
+          } else if (reactPlayerRef.current) {
+            reactPlayerRef.current.seekTo(seekSeconds, 'seconds');
+          }
+        }, 1000); // 1s para o player montar
+        
       } else {
         currentUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
       }
@@ -292,7 +328,7 @@ export default function VideoPlayer() {
       const chrome = (window as any).chrome;
       
       if (!cast || !cast.framework) {
-        alert("O SDK do Chromecast ainda está carregando ou não é suportado pelo seu navegador atual.");
+        alert("Atenção: O sistema de Cast utiliza o protocolo oficial do Chromecast.\n\nSmart TVs Samsung e LG geralmente não possuem Chromecast embutido (apenas DLNA próprio), e por isso a TV pode não aparecer na lista.\n\nSolução: Você precisará de um aparelho Chromecast ou abrir a OXTV direto no navegador da TV.");
         return;
       }
       
@@ -329,7 +365,7 @@ export default function VideoPlayer() {
       
     } catch (err) {
       console.error('Erro de Cast detalhado:', err);
-      alert("Falha ao transmitir o vídeo para a TV.");
+      alert("Falha ao transmitir o vídeo.\n\nSe sua TV é Samsung ou LG, ela pode ter cancelado a conexão por incompatibilidade de protocolo (ela exige o app nativo do YouTube, não aceitando Cast genérico).");
     }
   };
 
