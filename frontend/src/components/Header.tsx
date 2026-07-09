@@ -163,7 +163,7 @@ export function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
               className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-3 transition-colors"
             >
-              Chat da Comunidade
+              Chat ao Vivo
             </Link>
             <Link 
               href="/denuncias" 
