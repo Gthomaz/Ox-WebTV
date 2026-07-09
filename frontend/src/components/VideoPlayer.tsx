@@ -123,17 +123,29 @@ export default function VideoPlayer() {
     }
   }, [volume, muted, useNativeFallback]);
 
-  const playNextVideo = useCallback(() => {
-    if (isLive || programsListRef.current.length === 0) return;
-    
-    // Avança para o próximo (Loop infinito)
-    currentIndexRef.current = (currentIndexRef.current + 1) % programsListRef.current.length;
-    const nextProgram = programsListRef.current[currentIndexRef.current];
-    
-    setUrl(nextProgram.url);
-    setUseNativeFallback(!nextProgram.url.includes('.m3u8'));
-    setCurrentProgramTitle(nextProgram.title);
-    setPlayerErrorMsg('');
+  const playNextVideo = useCallback(async () => {
+    if (isLive) return;
+    try {
+      const res = await fetch('/api/grade/current');
+      const data = await res.json();
+      if (data.videoUrl && data.videoUrl.trim() !== '') {
+        setUrl(data.videoUrl);
+        setUseNativeFallback(!data.videoUrl.includes('.m3u8'));
+        setCurrentProgramTitle(data.title || 'Programação OXTV');
+        setPlayerErrorMsg('');
+        if (data.seekTo > 0 && !data.isLive) {
+          setTimeout(() => {
+            if (!data.videoUrl.includes('.m3u8') && nativeVideoRef.current) {
+              nativeVideoRef.current.currentTime = data.seekTo;
+            } else if (reactPlayerRef.current && typeof reactPlayerRef.current.seekTo === 'function') {
+              reactPlayerRef.current.seekTo(data.seekTo, 'seconds');
+            }
+          }, 1500);
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao buscar o próximo vídeo:", err);
+    }
   }, [isLive]);
 
   // Native Error Listener directly on DOM element
@@ -163,7 +175,11 @@ export default function VideoPlayer() {
           supabase.from('broadcast_control').update({ is_live: false }).eq('id', 1).then(() => {});
         }
       } else {
-        setPlayerErrorMsg(`ALERTA TÉCNICO: ${errorDetails} | Src: ${videoObj.src}`);
+        console.warn(`Aviso: Arquivo de vídeo incompatível ou corrompido. Pulando silenciosamente... Detalhes: ${errorDetails}`);
+        // Se a grade tiver apenas 1 vídeo corrompido, aguarda 3 segundos antes de tentar de novo para evitar loop infinito rápido
+        setTimeout(() => {
+          playNextVideo();
+        }, 3000);
       }
       
       setIsBuffering(false);
@@ -177,19 +193,54 @@ export default function VideoPlayer() {
 
   useEffect(() => {
     const fetchStatusAndPrograms = async () => {
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-        setUrl('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
-        return;
-      }
+      try {
+        const res = await fetch('/api/grade/current');
+        const data = await res.json();
+        
+        setIsLive(data.isLive);
+        
+        if (!data.videoUrl || data.videoUrl.trim() === '') {
+          setPlayerErrorMsg(data.isLive ? 'Sinal Ao Vivo Ligado, mas nenhuma URL configurada.' : '');
+          setUrl('');
+          return;
+        }
 
-      const { data: broadcastData } = await supabase.from('broadcast_control').select('*').single();
-      const { data: programsData } = await supabase.from('programacao').select('url, title').order('sort_order', { ascending: true });
-
-      if (broadcastData) {
-        updateState(broadcastData, programsData || []);
-      } else {
-        console.error("Nenhum dado encontrado na tabela broadcast_control. Usando fallback da Grade.");
-        updateState({ is_live: false, current_video_id: null }, programsData || []);
+        setUrl(data.videoUrl);
+        setUseNativeFallback(!data.videoUrl.includes('.m3u8'));
+        setCurrentProgramTitle(data.title || 'Programação OXTV');
+        setPlayerErrorMsg('');
+        
+        if (data.seekTo > 0 && !data.isLive) {
+          setTimeout(() => {
+            try {
+              if (!data.videoUrl.includes('.m3u8') && nativeVideoRef.current) {
+                nativeVideoRef.current.currentTime = data.seekTo;
+              } else if (reactPlayerRef.current && typeof reactPlayerRef.current.seekTo === 'function') {
+                reactPlayerRef.current.seekTo(data.seekTo, 'seconds');
+              } else if (reactPlayerRef.current) {
+                console.warn("reactPlayerRef.current.seekTo não é uma função no momento.");
+              }
+            } catch (err) {
+              console.error("Erro ao aplicar seekTo no player:", err);
+            }
+          }, 1500); // Aumentando um pouco o delay para dar tempo ao player de montar completamente
+        }
+        
+        setWatermarkUrl(data.watermarkUrl || '');
+        setWatermarkOpacity(1);
+        setWatermarkHPos(95);
+        setWatermarkVPos(95);
+        setWatermarkSize(100);
+        setActiveBanner(data.activeBanner || '');
+        
+        setPollQuestion((prev) => {
+          if (prev !== data.pollQuestion) setHasVoted(false);
+          return data.pollQuestion || '';
+        });
+        setPollOptions(data.pollOptions || []);
+        
+      } catch (err) {
+        console.error("Erro ao buscar a grade atual:", err);
       }
     };
 
@@ -201,9 +252,8 @@ export default function VideoPlayer() {
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'broadcast_control' },
-          async (payload) => {
-            const { data: programsData } = await supabase.from('programacao').select('url, title');
-            updateState(payload.new || payload.old, programsData || []);
+          () => {
+            fetchStatusAndPrograms();
           }
         )
         .subscribe();
@@ -213,91 +263,6 @@ export default function VideoPlayer() {
       };
     }
   }, []);
-
-  const updateState = (data: any, programs: any[]) => {
-    programsListRef.current = programs;
-    setIsLive(data.is_live);
-    let currentUrl = '';
-    
-    if (data.is_live) {
-      currentUrl = data.live_url;
-      setUrl(currentUrl);
-      setUseNativeFallback(currentUrl ? !currentUrl.includes('.m3u8') : false);
-      setCurrentProgramTitle('');
-      if (!currentUrl || currentUrl.trim() === '') {
-        setPlayerErrorMsg('Sinal Ao Vivo Ligado, mas nenhuma URL foi configurada no painel.');
-        setIsBuffering(false);
-      } else {
-        setPlayerErrorMsg('');
-      }
-    } else {
-      if (programs && programs.length > 0) {
-        // --- GLOBAL SYNC LOGIC ---
-        let totalDuration = 0;
-        programs.forEach(p => {
-          totalDuration += (p.duration_seconds || 3600); // fallback 1 hora
-        });
-        
-        // Ponto Zero (Epoch Fixo para sincronizar globalmente)
-        // Usamos uma data fixa no passado para garantir consistência
-        const epochTime = new Date('2024-01-01T00:00:00Z').getTime();
-        const now = Date.now();
-        const elapsedSeconds = Math.max(0, Math.floor((now - epochTime) / 1000));
-        
-        const currentPositionInLoop = elapsedSeconds % totalDuration;
-        
-        let accumulated = 0;
-        let activeIndex = 0;
-        let seekSeconds = 0;
-        
-        for (let i = 0; i < programs.length; i++) {
-          const duration = programs[i].duration_seconds || 3600;
-          if (currentPositionInLoop < accumulated + duration) {
-            activeIndex = i;
-            seekSeconds = currentPositionInLoop - accumulated;
-            break;
-          }
-          accumulated += duration;
-        }
-        
-        currentIndexRef.current = activeIndex;
-        currentUrl = programs[activeIndex].url;
-        
-        // Agenda o avanço do vídeo (Seek)
-        setTimeout(() => {
-          if (!currentUrl.includes('.m3u8') && nativeVideoRef.current) {
-            nativeVideoRef.current.currentTime = seekSeconds;
-          } else if (reactPlayerRef.current) {
-            reactPlayerRef.current.seekTo(seekSeconds, 'seconds');
-          }
-        }, 1000); // 1s para o player montar
-        
-      } else {
-        currentUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
-      }
-      
-      setUrl(currentUrl);
-      setUseNativeFallback(currentUrl ? !currentUrl.includes('.m3u8') : false);
-      setPlayerErrorMsg('');
-      
-      const matchedProgram = programs.find((p: any) => p.url === currentUrl);
-      setCurrentProgramTitle(matchedProgram ? matchedProgram.title : 'Programação OXTV');
-    }
-    
-    setWatermarkUrl(data.watermark_url || '');
-    setWatermarkOpacity(data.watermark_opacity ?? 1);
-    setWatermarkHPos(data.watermark_h_pos ?? 95);
-    setWatermarkVPos(data.watermark_v_pos ?? 95);
-    setWatermarkSize(data.watermark_size ?? 100);
-    setActiveBanner(data.active_banner || '');
-    
-    setPollQuestion((prev) => {
-      if (prev !== data.active_poll_question) setHasVoted(false);
-      return data.active_poll_question || '';
-    });
-    setPollOptions(data.active_poll_options || []);
-    setIsChatActive(data.chat_active || false);
-  };
 
 
 
@@ -534,7 +499,7 @@ export default function VideoPlayer() {
           {watermarkUrl ? (
             <img src={watermarkUrl} alt="Watermark" className="h-12 w-auto object-contain drop-shadow-md" />
           ) : (
-            <Image src={Logo} alt="Watermark" className="h-12 w-auto object-contain drop-shadow-md" />
+            <img src={typeof Logo === 'string' ? Logo : Logo.src} alt="Watermark" className="h-12 w-auto object-contain drop-shadow-md" />
           )}
         </div>
       )}

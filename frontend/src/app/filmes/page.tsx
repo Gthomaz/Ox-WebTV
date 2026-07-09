@@ -58,15 +58,42 @@ function FilmesContent() {
 
       <div className="w-full px-4 sm:px-6 lg:px-8 z-10 flex flex-col max-w-7xl mx-auto space-y-10">
 
-        {/* Title area */}
-        <div className="text-center md:text-left space-y-4">
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white drop-shadow-[0_0_15px_rgba(0,240,255,0.2)]">
-            Filmes <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00f0ff] to-white">Sugeridos</span>
-          </h1>
-          <p className="text-white/60 font-light">
-            Escolha um título e assista sob demanda.
-          </p>
-        </div>
+        {/* Hero Section (Netflix Style) */}
+        {movies.length > 0 && !activeMovie && (
+          <div className="relative w-full aspect-video md:aspect-[21/9] rounded-2xl overflow-hidden mb-8 shadow-2xl group border border-white/10">
+            <Image
+              src={movies[0].cover_url || fallbackImage}
+              alt={movies[0].title}
+              fill
+              sizes="100vw"
+              className="object-cover transition-transform duration-1000 group-hover:scale-105"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+            
+            <div className="absolute bottom-0 left-0 p-8 md:p-16 flex flex-col justify-end w-full md:w-2/3">
+              <h1 className="text-4xl md:text-6xl font-black text-white mb-4 drop-shadow-lg tracking-tight">
+                {movies[0].title}
+              </h1>
+              <p className="text-white/80 text-sm md:text-lg mb-8 line-clamp-3 md:line-clamp-4 max-w-xl text-shadow">
+                {movies[0].description || "Assista agora ao nosso principal destaque. Um conteúdo exclusivo preparado especialmente para você na OX WebTV."}
+              </p>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => {
+                    setActiveMovieId(movies[0].id);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="bg-white text-black hover:bg-gray-200 px-8 py-3 rounded-lg font-bold text-lg flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                >
+                  <PlayCircle size={24} fill="currentColor" className="text-black" />
+                  Assistir
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Player Component for VOD */}
         {activeMovie && (

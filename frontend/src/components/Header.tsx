@@ -3,15 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 
 import { supabase } from '@/lib/supabase';
 
 export function Header() {
+  const pathname = usePathname();
   const [time, setTime] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLive, setIsLive] = useState(false);
+
+
 
   useEffect(() => {
     const updateClock = () => {
@@ -52,9 +56,15 @@ export function Header() {
     };
   }, []);
 
+  // Ocultar este header principal se estivermos no painel da diretoria (que já tem o próprio header)
+  // IMPORTANTE: Deve vir DEPOIS de todos os hooks para evitar erro de "Rendered fewer hooks than expected"
+  if (pathname === '/admin/dashboard') {
+    return null;
+  }
+
   return (
     <>
-    <header className="fixed top-0 left-0 w-full z-50 bg-[#0e4b77]/40 backdrop-blur-[10px] border-b border-white/10">
+    <header className="sticky top-0 left-0 w-full z-50 bg-[#0e4b77]/40 backdrop-blur-[10px] border-b border-white/10">
       <div className="max-w-screen-2xl mx-auto px-4 h-24 flex items-center justify-between">
         {/* Left: Logo */}
         <div className="flex-shrink-0 flex items-center h-full pl-2 pt-2 sm:pl-4 sm:pt-3">
@@ -100,30 +110,9 @@ export function Header() {
 
         {/* Right: Navigation & Actions */}
         <div className="flex items-center gap-3 sm:gap-6">
-          <nav className="hidden md:flex items-center gap-4">
-            <Link 
-              href="/grade" 
-              className="px-5 py-2 text-sm font-medium text-white/90 bg-transparent border border-white/20 rounded-lg hover:border-[#00f0ff] hover:text-[#00f0ff] hover:shadow-[0_0_12px_rgba(0,240,255,0.4)] transition-all duration-300"
-            >
-              Programação do Canal
-            </Link>
-            <Link 
-              href="/filmes" 
-              className="px-5 py-2 text-sm font-medium text-white/90 bg-transparent border border-white/20 rounded-lg hover:border-[#00f0ff] hover:text-[#00f0ff] hover:shadow-[0_0_12px_rgba(0,240,255,0.4)] transition-all duration-300"
-            >
-              Filmes Sugeridos
-            </Link>
-            <Link 
-              href="/#chat" 
-              className="px-5 py-2 text-sm font-bold text-[#00f0ff] bg-[#00f0ff]/10 border border-[#00f0ff]/30 rounded-lg hover:bg-[#00f0ff]/20 hover:shadow-[0_0_15px_rgba(0,240,255,0.5)] transition-all duration-300"
-            >
-              Chat ao Vivo
-            </Link>
-          </nav>
-          
-          {/* Mobile Hamburger Button */}
+          {/* Hamburger Menu Button (Always visible) */}
           <button 
-            className="md:hidden p-2 text-white hover:text-[#00f0ff] transition-colors"
+            className="p-2 text-white hover:text-[#00f0ff] transition-colors"
             onClick={() => setIsMobileMenuOpen(true)}
           >
             <Menu size={28} />
@@ -134,11 +123,11 @@ export function Header() {
     </header>
 
       <div 
-        className={`fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsMobileMenuOpen(false)}
       >
         <div 
-          className={`absolute top-0 right-0 w-64 h-full bg-zinc-800 border-l border-white/10 p-6 flex flex-col gap-8 shadow-2xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+          className={`absolute top-0 right-0 w-64 h-full bg-[#051622] border-l border-white/10 p-6 flex flex-col gap-6 shadow-2xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
           onClick={e => e.stopPropagation()}
         >
           <div className="flex justify-end">
@@ -147,34 +136,55 @@ export function Header() {
             </button>
           </div>
           
-          <nav className="flex flex-col gap-4 mt-8">
+          <nav className="flex flex-col gap-4 mt-4">
             <Link 
               href="/" 
               onClick={() => setIsMobileMenuOpen(false)}
-              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-4 transition-colors"
+              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-3 transition-colors"
             >
               Home (Player)
             </Link>
             <Link 
               href="/grade" 
               onClick={() => setIsMobileMenuOpen(false)}
-              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-4 transition-colors"
+              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-3 transition-colors"
             >
               Programação do Canal
             </Link>
             <Link 
               href="/filmes" 
               onClick={() => setIsMobileMenuOpen(false)}
-              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-4 transition-colors"
+              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-3 transition-colors"
             >
               Filmes Sugeridos
             </Link>
             <Link 
               href="/#chat" 
               onClick={() => setIsMobileMenuOpen(false)}
-              className="text-lg font-bold text-[#00f0ff] hover:text-white border-b border-[#00f0ff]/30 pb-4 transition-colors"
+              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-3 transition-colors"
             >
-              💬 Chat ao Vivo
+              Chat da Comunidade
+            </Link>
+            <Link 
+              href="/denuncias" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-lg font-medium text-red-500 hover:text-red-400 border-b border-white/10 pb-3 transition-colors flex items-center justify-between"
+            >
+              Portal de Denúncias <span className="text-xs bg-red-600 text-white px-2 py-1 rounded">NOVO</span>
+            </Link>
+            <Link 
+              href="/login" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-3 transition-colors mt-2"
+            >
+              Entrar (Login)
+            </Link>
+            <Link 
+              href="/register" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-lg font-bold text-[#051622] bg-[#00f0ff] hover:bg-white text-center py-2 rounded-lg transition-colors mt-2"
+            >
+              Criar Conta Grátis
             </Link>
           </nav>
           
