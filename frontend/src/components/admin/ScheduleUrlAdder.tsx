@@ -143,7 +143,7 @@ export default function ScheduleUrlAdder({ onUploadComplete }: ScheduleUrlAdderP
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
             onBlur={(e) => handleAutoDuration(e.target.value)}
-            placeholder="Cole a URL do Vídeo (ex: https://oxtv.com.br/tv-videos/video.mp4)"
+            placeholder="Cole a URL do Vídeo ou Transmissão Ao Vivo (ex: .mp4, .webm, .m3u8)"
             required
             className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-3 text-white text-sm focus:border-green-400 outline-none"
           />

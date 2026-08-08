@@ -231,7 +231,7 @@ export default function ScheduleUploader({ onUploadComplete }: ScheduleUploaderP
             <>
               <FileVideo className="text-white/40 mb-2 group-hover:scale-110 transition-transform" size={32} />
               <p className="text-white/80 text-sm font-semibold">Clique para procurar arquivo</p>
-              <p className="text-white/40 text-xs mt-1">ou arraste o vídeo para esta área (MP4)</p>
+              <p className="text-white/40 text-xs mt-1">ou arraste o vídeo para esta área (MP4, WEBM, OGG)</p>
             </>
           )}
         </div>
