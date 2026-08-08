@@ -5,6 +5,8 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 
+import WebSocket from 'ws';
+
 // Carregar variáveis de ambiente
 dotenv.config();
 
@@ -16,7 +18,17 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: false,
+  },
+  global: {
+    headers: { 'x-my-custom-header': 'ox-tv-bot' },
+  }
+});
+// Para contornar o erro de WebSocket no Node 20:
+global.WebSocket = WebSocket;
+
 
 // Configuração de Pastas
 const RAW_DIR = path.join(process.cwd(), 'raw_videos');
