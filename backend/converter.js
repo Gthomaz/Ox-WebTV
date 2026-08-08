@@ -87,8 +87,9 @@ async function processQueue() {
 
     console.log(`✅ Conversão concluída com sucesso!`);
     
-    // Adicionar no banco de dados (VOD / Filmes) - Usando a URL do mp4 como padrão
-    const publicUrl = `/uploads/${uniqueId}_${filename}.mp4`;
+    // 4. Salvar no Banco de Dados (Supabase)
+    const VPS_IP = '187.127.44.246';
+    const publicUrl = `http://${VPS_IP}/uploads/${path.basename(mp4Output)}`;
     
     console.log(`📡 Salvando no banco de dados OX TV...`);
     const { error } = await supabase.from('filmes').insert([{
