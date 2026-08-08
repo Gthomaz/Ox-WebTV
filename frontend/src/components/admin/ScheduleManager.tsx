@@ -26,6 +26,9 @@ export default function ScheduleManager() {
   const [scheduleId, setScheduleId] = useState<number | null>(null);
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [totalDuration, setTotalDuration] = useState(0);
+  
+  // VOD Library State
+  const [vodMovies, setVodMovies] = useState<any[]>([]);
 
   const [newTitle, setNewTitle] = useState('');
   const [newUrl, setNewUrl] = useState('');
@@ -35,7 +38,13 @@ export default function ScheduleManager() {
 
   useEffect(() => {
     fetchScheduleForDate(selectedDate);
+    fetchVodMovies();
   }, [selectedDate]);
+
+  const fetchVodMovies = async () => {
+    const { data } = await supabase.from('filmes').select('*').order('id', { ascending: false });
+    if (data) setVodMovies(data);
+  };
 
   const fetchScheduleForDate = async (dateStr: string) => {
     const { data: schedule } = await supabase
@@ -455,9 +464,48 @@ export default function ScheduleManager() {
         </button>
       </form>
 
-      {/* Upload Component Integrado */}
-      <ScheduleUploader onUploadComplete={handleAddFromUpload} />
-      <ScheduleUrlAdder onUploadComplete={handleAddFromUpload} />
+      {/* Biblioteca VOD (Vídeos Convertidos pelo Robô) */}
+      <div className="mt-8 bg-[#051622]/50 border border-[#00f0ff]/20 rounded-xl p-6 shadow-[0_0_15px_rgba(0,240,255,0.05)]">
+        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <Tv className="text-[#00f0ff]" />
+          Biblioteca VOD (Vídeos Processados)
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+          {vodMovies.map((movie) => {
+            const mTitle = movie.title || movie.titulo || 'Sem Título';
+            const mUrl = movie.video_url || movie.url || '';
+            const mDuration = movie.duration_seconds || movie.duracao_segundos || 0;
+            
+            return (
+              <div key={movie.id} className="bg-black/60 border border-white/5 p-4 rounded-lg flex flex-col justify-between group hover:border-[#00f0ff]/50 transition-all">
+                <div className="mb-3">
+                  <p className="text-white font-bold truncate text-sm mb-1" title={mTitle}>{mTitle}</p>
+                  <p className="text-[#00f0ff]/70 text-xs font-mono bg-[#00f0ff]/10 inline-block px-2 py-0.5 rounded">
+                    Duração: {formatTime(mDuration)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleAddFromUpload(mTitle, mUrl, mDuration, '')}
+                  className="bg-[#00f0ff]/10 text-[#00f0ff] hover:bg-[#00f0ff] hover:text-[#051622] w-full py-2 rounded text-sm font-bold transition-all shadow-[0_0_10px_rgba(0,240,255,0)] hover:shadow-[0_0_15px_rgba(0,240,255,0.4)]"
+                >
+                  + Adicionar à Grade
+                </button>
+              </div>
+            );
+          })}
+          {vodMovies.length === 0 && (
+            <div className="col-span-full text-center py-8 text-white/40 text-sm border border-dashed border-white/10 rounded-lg">
+              Nenhum vídeo processado encontrado no banco de dados.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* Upload Component Integrado */}
+        <ScheduleUploader onUploadComplete={handleAddFromUpload} />
+        <ScheduleUrlAdder onUploadComplete={handleAddFromUpload} />
+      </div>
     </div>
   );
 }
