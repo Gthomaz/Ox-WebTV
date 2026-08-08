@@ -176,7 +176,14 @@ export default function ScheduleManager() {
       fetchScheduleForDate(selectedDate);
       alert('Upload concluído e adicionado à Grade com sucesso!');
     } catch (err: any) {
-      alert(err.message + '\\n\\n(O vídeo foi salvo no Catálogo VOD, mas não pôde entrar na grade.)');
+      alert(err.message + '\n\n(O vídeo foi salvo no Catálogo VOD, mas não pôde entrar na grade.)');
+    }
+  };
+
+  const handleRemoveVodMovie = async (movieId: number) => {
+    if (window.confirm('Tem certeza que deseja excluir este vídeo da biblioteca?')) {
+      await supabase.from('filmes').delete().eq('id', movieId);
+      fetchVodMovies();
     }
   };
 
@@ -470,34 +477,63 @@ export default function ScheduleManager() {
           <Tv className="text-[#00f0ff]" />
           Biblioteca VOD (Vídeos Processados)
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-          {vodMovies.map((movie) => {
-            const mTitle = movie.title || movie.titulo || 'Sem Título';
-            const mUrl = movie.video_url || movie.url || '';
-            const mDuration = movie.duration_seconds || movie.duracao_segundos || 0;
-            
-            return (
-              <div key={movie.id} className="bg-black/60 border border-white/5 p-4 rounded-lg flex flex-col justify-between group hover:border-[#00f0ff]/50 transition-all">
-                <div className="mb-3">
-                  <p className="text-white font-bold truncate text-sm mb-1" title={mTitle}>{mTitle}</p>
-                  <p className="text-[#00f0ff]/70 text-xs font-mono bg-[#00f0ff]/10 inline-block px-2 py-0.5 rounded">
-                    Duração: {formatTime(mDuration)}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleAddFromUpload(mTitle, mUrl, mDuration, '')}
-                  className="bg-[#00f0ff]/10 text-[#00f0ff] hover:bg-[#00f0ff] hover:text-[#051622] w-full py-2 rounded text-sm font-bold transition-all shadow-[0_0_10px_rgba(0,240,255,0)] hover:shadow-[0_0_15px_rgba(0,240,255,0.4)]"
-                >
-                  + Adicionar à Grade
-                </button>
-              </div>
-            );
-          })}
-          {vodMovies.length === 0 && (
-            <div className="col-span-full text-center py-8 text-white/40 text-sm border border-dashed border-white/10 rounded-lg">
-              Nenhum vídeo processado encontrado no banco de dados.
-            </div>
-          )}
+        <div className="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar border border-white/10 rounded-lg">
+          <table className="w-full text-left border-collapse text-sm min-w-[700px]">
+            <thead className="bg-[#051622] sticky top-0 z-20 shadow-md">
+              <tr className="border-b border-white/20 text-white/50 uppercase tracking-wider text-xs">
+                <th className="py-3 px-4 border-r border-white/10">Data</th>
+                <th className="py-3 px-4 border-r border-white/10">Nome do Vídeo</th>
+                <th className="py-3 px-4 border-r border-white/10 text-center">Duração</th>
+                <th className="py-3 px-4 border-r border-white/10 text-center">Formato</th>
+                <th className="py-3 px-4 border-r border-white/10 text-center">Adicionar</th>
+                <th className="py-3 px-4 text-center">Excluir</th>
+              </tr>
+            </thead>
+            <tbody>
+              {vodMovies.map((movie) => {
+                const mTitle = movie.title || movie.titulo || 'Sem Título';
+                const mUrl = movie.video_url || movie.url || '';
+                const mDuration = movie.duration_seconds || movie.duracao_segundos || 0;
+                const mFormat = mUrl.includes('.mp4') ? 'MP4' : (mUrl.includes('.webm') ? 'WEBM' : 'Outro');
+                const mDate = movie.created_at ? new Date(movie.created_at).toLocaleDateString('pt-BR') : '-';
+                
+                return (
+                  <tr key={movie.id} className="border-b border-white/5 hover:bg-white/5 transition-colors text-white">
+                    <td className="py-3 px-4 border-r border-white/10 text-white/60 whitespace-nowrap">{mDate}</td>
+                    <td className="py-3 px-4 border-r border-white/10 font-medium truncate max-w-[250px]" title={mTitle}>{mTitle}</td>
+                    <td className="py-3 px-4 border-r border-white/10 text-[#00f0ff] font-mono text-center">{formatTime(mDuration)}</td>
+                    <td className="py-3 px-4 border-r border-white/10 text-center">
+                      <span className="bg-white/10 px-2 py-1 rounded text-xs text-white/70">{mFormat}</span>
+                    </td>
+                    <td className="py-3 px-4 border-r border-white/10 text-center">
+                      <button
+                        onClick={() => handleAddFromUpload(mTitle, mUrl, mDuration, '')}
+                        className="bg-[#00f0ff]/10 text-[#00f0ff] hover:bg-[#00f0ff] hover:text-[#051622] px-3 py-1.5 rounded text-xs font-bold transition-all shadow-[0_0_10px_rgba(0,240,255,0)] hover:shadow-[0_0_15px_rgba(0,240,255,0.4)] whitespace-nowrap"
+                      >
+                        + Adicionar à Grade
+                      </button>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <button 
+                        onClick={() => handleRemoveVodMovie(movie.id)}
+                        className="text-red-500/50 hover:text-red-400 p-1.5 rounded transition-colors bg-red-500/5 hover:bg-red-500/20"
+                        title="Excluir Vídeo da Biblioteca"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {vodMovies.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-white/40 text-sm">
+                    Nenhum vídeo processado encontrado no banco de dados.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
