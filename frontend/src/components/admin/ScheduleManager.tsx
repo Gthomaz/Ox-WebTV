@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Calendar as CalendarIcon, Clock, Plus, Trash2, Edit2, Save, Tv, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Plus, Trash2, Edit2, Save, Tv, AlertTriangle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import ScheduleUploader from './ScheduleUploader';
+import ScheduleUrlAdder from './ScheduleUrlAdder';
 
 interface ScheduleItem {
   id: number;
@@ -183,6 +184,48 @@ export default function ScheduleManager() {
     fetchScheduleForDate(selectedDate);
   };
 
+  const handleReorder = async (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === items.length - 1) return;
+
+    const newItems = [...items];
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    // Swap items
+    const temp = newItems[index];
+    newItems[index] = newItems[swapIndex];
+    newItems[swapIndex] = temp;
+
+    // Recalculate start times linearly for the whole list to maintain proper loop sequence
+    let currentStartTime = 0;
+    const updates = newItems.map((item, i) => {
+      const updatedItem = {
+        ...item,
+        start_time_seconds: currentStartTime,
+        sort_order: i
+      };
+      currentStartTime += item.duration_seconds;
+      return updatedItem;
+    });
+
+    // Optimistic UI update
+    setItems(updates);
+
+    // Persist to DB (sequentially since bulk upsert requires all primary keys)
+    try {
+      for (const item of updates) {
+        await supabase.from('schedule_items').update({ 
+          start_time_seconds: item.start_time_seconds,
+          sort_order: item.sort_order 
+        }).eq('id', item.id);
+      }
+    } catch (e) {
+      console.error('Failed to reorder', e);
+      // Revert on fail
+      fetchScheduleForDate(selectedDate);
+    }
+  };
+
   const handleEditTitle = async (itemId: number, currentTitle: string) => {
     const newTitle = window.prompt('Digite o novo título para este vídeo:', currentTitle);
     if (newTitle && newTitle.trim() !== '' && newTitle !== currentTitle) {
@@ -282,6 +325,7 @@ export default function ScheduleManager() {
               <th className="py-3 px-3 border-x border-white/10">Título do Vídeo</th>
               <th className="py-3 px-3 border-r border-white/10">Duração</th>
               <th className="py-3 px-3 border-r border-white/10">Horário (Play)</th>
+              <th className="py-3 px-3 border-r border-white/10 w-16 text-center">Ordem</th>
               <th className="py-3 px-3 border-r border-white/10 text-center">Editar</th>
               <th className="py-3 px-3 text-center">Excluir</th>
             </tr>
@@ -296,6 +340,26 @@ export default function ScheduleManager() {
                     : `${item.duration_seconds} seg`}
                 </td>
                 <td className="py-3 px-3 border-r border-white/10 font-mono text-[#00f0ff]">{formatTime(item.start_time_seconds)}</td>
+                <td className="py-3 px-3 border-r border-white/10 text-center">
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    <button 
+                      onClick={() => handleReorder(items.indexOf(item), 'up')}
+                      disabled={items.indexOf(item) === 0}
+                      className="text-white/40 hover:text-[#00f0ff] disabled:opacity-20 disabled:hover:text-white/40 p-0.5 rounded transition-colors"
+                      title="Mover para cima"
+                    >
+                      <ChevronUp size={18} />
+                    </button>
+                    <button 
+                      onClick={() => handleReorder(items.indexOf(item), 'down')}
+                      disabled={items.indexOf(item) === items.length - 1}
+                      className="text-white/40 hover:text-[#00f0ff] disabled:opacity-20 disabled:hover:text-white/40 p-0.5 rounded transition-colors"
+                      title="Mover para baixo"
+                    >
+                      <ChevronDown size={18} />
+                    </button>
+                  </div>
+                </td>
                 <td className="py-3 px-3 border-r border-white/10 text-center">
                   <button 
                     onClick={() => handleEditTitle(item.id, item.title)}
@@ -329,6 +393,7 @@ export default function ScheduleManager() {
               <tr className="text-[#00f0ff] font-bold">
                 <td className="py-3 px-3 border-x border-white/10 text-right uppercase text-xs">Total do Dia:</td>
                 <td className="py-3 px-3 border-r border-white/10">{formatTime(totalDuration)}</td>
+                <td className="py-3 px-3 border-r border-white/10"></td>
                 <td className="py-3 px-3 border-r border-white/10"></td>
                 <td className="py-3 px-3 border-r border-white/10"></td>
                 <td className="py-3 px-3"></td>
@@ -392,6 +457,7 @@ export default function ScheduleManager() {
 
       {/* Upload Component Integrado */}
       <ScheduleUploader onUploadComplete={handleAddFromUpload} />
+      <ScheduleUrlAdder onUploadComplete={handleAddFromUpload} />
     </div>
   );
 }

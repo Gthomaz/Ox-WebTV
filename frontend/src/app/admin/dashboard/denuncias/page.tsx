@@ -245,7 +245,7 @@ export default function AdminBoardPage() {
                 placeholder="Ex: Equipe enviada ao local para averiguação inicial..." 
                 value={dropObservation}
                 onChange={e => setDropObservation(e.target.value)}
-                className="w-full mb-4 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0D3B66] focus:border-transparent outline-none resize-none min-h-[120px]"
+                className="w-full mb-4 p-4 text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0D3B66] focus:border-transparent outline-none resize-none min-h-[120px]"
               />
               <div className="flex gap-3 justify-end">
                 <button 
@@ -555,7 +555,7 @@ export default function AdminBoardPage() {
                   placeholder="Escreva uma anotação avulsa..." 
                   value={newNote}
                   onChange={e => setNewNote(e.target.value)}
-                  className="w-full mb-3 p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0D3B66] focus:border-transparent outline-none resize-none bg-white shadow-inner"
+                  className="w-full mb-3 p-3 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0D3B66] focus:border-transparent outline-none resize-none bg-white shadow-inner"
                   rows={3}
                 />
                 <button 

@@ -145,7 +145,7 @@ export function DenunciaForm({ onSuccess }: { onSuccess?: () => void }) {
             <input 
               type="text"
               placeholder="Ex: Asfalto cedendo na via principal" 
-              className="w-full bg-gray-50 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
               value={title}
               onChange={e => setTitle(e.target.value)}
               required 
@@ -160,7 +160,7 @@ export function DenunciaForm({ onSuccess }: { onSuccess?: () => void }) {
               rows={5}
               value={description}
               onChange={e => setDescription(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+              className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
             />
           </div>
 
@@ -170,7 +170,7 @@ export function DenunciaForm({ onSuccess }: { onSuccess?: () => void }) {
               <input 
                 type="text"
                 placeholder="(22) 99999-9999" 
-                className="w-full bg-gray-50 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
                 required 
@@ -181,7 +181,7 @@ export function DenunciaForm({ onSuccess }: { onSuccess?: () => void }) {
               <input 
                 type="email"
                 placeholder="seuemail@exemplo.com" 
-                className="w-full bg-gray-50 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required 
@@ -198,7 +198,7 @@ export function DenunciaForm({ onSuccess }: { onSuccess?: () => void }) {
               <input 
                 type="text"
                 placeholder="Rua, Número, Bairro - Quissamã, RJ" 
-                className="flex-1 bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500" 
+                className="flex-1 bg-white border border-gray-300 text-gray-900 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500" 
                 value={locationAddress}
                 onChange={e => setLocationAddress(e.target.value)}
                 required

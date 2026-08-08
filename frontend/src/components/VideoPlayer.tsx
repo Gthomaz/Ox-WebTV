@@ -170,10 +170,8 @@ export default function VideoPlayer() {
       }
       
       if (isLive) {
-        console.log("Transmissão Ao Vivo (M3U8) caiu. Voltando para Grade automaticamente...");
-        if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-          supabase.from('broadcast_control').update({ is_live: false }).eq('id', 1).then(() => {});
-        }
+        console.log("Transmissão Ao Vivo (M3U8) falhou no cliente. Tentando reconectar...");
+        setTimeout(() => playNextVideo(), 5000);
       } else {
         console.warn(`Aviso: Arquivo de vídeo incompatível ou corrompido. Pulando silenciosamente... Detalhes: ${errorDetails}`);
         // Se a grade tiver apenas 1 vídeo corrompido, aguarda 3 segundos antes de tentar de novo para evitar loop infinito rápido
@@ -371,16 +369,16 @@ export default function VideoPlayer() {
           onStart={() => setIsBuffering(false)}
           onPlay={() => setIsBuffering(false)}
           onEnded={() => {
-            if (isLive && process.env.NEXT_PUBLIC_SUPABASE_URL) {
-               supabase.from('broadcast_control').update({ is_live: false }).eq('id', 1).then(() => {});
+            if (isLive) {
+               playNextVideo();
             } else {
                playNextVideo();
             }
           }}
           onError={(e: any) => {
             console.error("VideoPlayer Error - URL:", url, e);
-            if (isLive && process.env.NEXT_PUBLIC_SUPABASE_URL) {
-              supabase.from('broadcast_control').update({ is_live: false }).eq('id', 1).then(() => {});
+            if (isLive) {
+              setTimeout(() => playNextVideo(), 5000);
             } else {
               setPlayerErrorMsg(`ReactPlayer Error: Falha ao carregar HLS. Motivo: ${e?.type || e?.message || 'Media não suportada ou CORS.'} | URL: ${url}`);
             }
@@ -388,6 +386,10 @@ export default function VideoPlayer() {
           }}
           config={({
             file: {
+              attributes: {
+                playsInline: true,
+                webkitPlaysInline: true
+              },
               hlsOptions: {
                 maxBufferLength: 30,
                 maxBufferSize: 60 * 1000 * 1000,
@@ -395,6 +397,7 @@ export default function VideoPlayer() {
               }
             }
           } as any)}
+          playsinline={true}
         />
       ) : (
         <video 
@@ -404,7 +407,7 @@ export default function VideoPlayer() {
           controls={true}
           muted={muted}
           preload="auto"
-          className="absolute inset-0 w-full h-full object-contain"
+          className="absolute inset-0 w-full h-full object-contain bg-black"
           onLoadedData={() => setIsBuffering(false)}
           onCanPlay={() => setIsBuffering(false)}
           onPlaying={() => setIsBuffering(false)}
@@ -422,8 +425,8 @@ export default function VideoPlayer() {
                 default: errorDetails = `${mediaError.code}: Erro genérico na mídia.`; break;
               }
             }
-            if (isLive && process.env.NEXT_PUBLIC_SUPABASE_URL) {
-              supabase.from('broadcast_control').update({ is_live: false }).eq('id', 1).then(() => {});
+            if (isLive) {
+              setTimeout(() => playNextVideo(), 5000);
             } else {
               setPlayerErrorMsg(`Native Video Error: ${errorDetails} | Src: ${url}`);
             }
