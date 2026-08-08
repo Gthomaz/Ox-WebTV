@@ -242,12 +242,31 @@ export default function ScheduleManager() {
     }
   };
 
-  const handleEditTitle = async (itemId: number, currentTitle: string) => {
+  const handleEditItem = async (itemId: number, currentTitle: string, currentStartTime: number) => {
     const newTitle = window.prompt('Digite o novo título para este vídeo:', currentTitle);
-    if (newTitle && newTitle.trim() !== '' && newTitle !== currentTitle) {
-      await supabase.from('schedule_items').update({ title: newTitle.trim() }).eq('id', itemId);
-      fetchScheduleForDate(selectedDate);
+    if (newTitle === null) return; // Usuário cancelou
+
+    const currentFormattedTime = formatTime(currentStartTime);
+    const newTime = window.prompt('Digite o novo horário de início (Formato HH:MM:SS ou HH:MM):', currentFormattedTime);
+    if (newTime === null) return; // Usuário cancelou
+
+    const parsedTime = parseTime(newTime);
+    let finalTime = currentStartTime;
+    
+    if (parsedTime !== null) {
+      finalTime = parsedTime;
+    } else if (newTime.trim() !== currentFormattedTime) {
+      alert('Formato de hora inválido. O horário não foi alterado.');
     }
+
+    const titleToSave = newTitle.trim() === '' ? currentTitle : newTitle.trim();
+
+    await supabase.from('schedule_items').update({ 
+      title: titleToSave,
+      start_time_seconds: finalTime
+    }).eq('id', itemId);
+    
+    fetchScheduleForDate(selectedDate);
   };
 
   const formatTime = (seconds: number) => {
@@ -378,9 +397,9 @@ export default function ScheduleManager() {
                 </td>
                 <td className="py-3 px-3 border-r border-white/10 text-center">
                   <button 
-                    onClick={() => handleEditTitle(item.id, item.title)}
+                    onClick={() => handleEditItem(item.id, item.title, item.start_time_seconds)}
                     className="text-[#00f0ff]/50 hover:text-[#00f0ff] p-1 rounded transition-colors"
-                    title="Editar Título"
+                    title="Editar Título e Horário"
                   >
                     <Edit2 size={16} />
                   </button>
