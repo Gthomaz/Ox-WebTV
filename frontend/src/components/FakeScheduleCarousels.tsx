@@ -1,56 +1,67 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, PlayCircle, X, Info } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
-interface FakeProgram {
-  id: string;
+interface Category {
+  id: number;
+  name: string;
+  sort_order: number;
+}
+
+interface CarouselItem {
+  id: number;
+  category_id: number;
   title: string;
   description: string;
   thumbnail_url: string;
-  time: string;
-  duration: string;
+  time_label: string;
+  duration_label: string;
   genre: string;
+  video_url: string;
+  sort_order: number;
 }
 
-const CAROUSEL_CATEGORIES = [
-  "Destaques da Tarde",
-  "Sessão Pipoca",
-  "Maratona Fim de Semana",
-  "Clássicos Inesquecíveis",
-  "Ação e Aventura",
-  "Séries Originais"
-];
-
-const FAKE_PROGRAMS: FakeProgram[] = [
-  { id: 'f1', title: 'A Jornada do Herói', description: 'Um jovem descobre que tem poderes ocultos e precisa salvar seu planeta natal de uma invasão alienígena iminente.', thumbnail_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&q=80', time: '14:00', duration: '120 min', genre: 'Ficção Científica' },
-  { id: 'f2', title: 'Riso Solto', description: 'Uma comédia hilariante sobre três amigos que decidem abrir um negócio de passear com cães, mas acabam se envolvendo em uma confusão com a máfia.', thumbnail_url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&q=80', time: '16:30', duration: '95 min', genre: 'Comédia' },
-  { id: 'f3', title: 'Mistério na Cabana', description: 'Um grupo de adolescentes vai passar o fim de semana em uma cabana isolada e percebem que não estão sozinhos na floresta.', thumbnail_url: 'https://images.unsplash.com/photo-1478479405421-ce83c92fb3ba?w=800&q=80', time: '18:15', duration: '105 min', genre: 'Suspense' },
-  { id: 'f4', title: 'Velocidade Sem Limites', description: 'Corridas clandestinas, carros envenenados e muita adrenalina nas ruas de Tóquio.', thumbnail_url: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=800&q=80', time: '20:00', duration: '110 min', genre: 'Ação' },
-  { id: 'f5', title: 'O Último Suspiro', description: 'Um detetive aposentado é forçado a voltar à ativa quando um serial killer do seu passado ressurge.', thumbnail_url: 'https://images.unsplash.com/photo-1505686994751-f9b927ac1715?w=800&q=80', time: '22:30', duration: '130 min', genre: 'Drama Policial' },
-  { id: 'f6', title: 'Amor nas Alturas', description: 'Dois comissários de bordo que se odeiam são forçados a trabalhar juntos no voo mais longo do mundo.', thumbnail_url: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80', time: '01:00', duration: '90 min', genre: 'Romance' }
-];
-
 export function FakeScheduleCarousels() {
-  const [activeItem, setActiveItem] = useState<FakeProgram | null>(null);
+  const [activeItem, setActiveItem] = useState<CarouselItem | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [items, setItems] = useState<CarouselItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Helper to shuffle the array so each carousel looks slightly different
-  const getShuffledPrograms = () => {
-    return [...FAKE_PROGRAMS].sort(() => 0.5 - Math.random());
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [catsRes, itemsRes] = await Promise.all([
+          supabase.from('site_categories').select('*').order('sort_order', { ascending: true }),
+          supabase.from('site_carousel_items').select('*').order('sort_order', { ascending: true })
+        ]);
+        if (catsRes.data) setCategories(catsRes.data);
+        if (itemsRes.data) setItems(itemsRes.data);
+      } catch (e) {
+        console.error(e);
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  if (loading) return <div className="text-white/50 text-center py-20 animate-pulse">Carregando prateleiras...</div>;
+  if (categories.length === 0) return <div className="text-white/50 text-center py-20">Nenhuma prateleira disponível no momento.</div>;
 
   return (
     <div className="w-full flex flex-col space-y-10">
       
-      {CAROUSEL_CATEGORIES.map((category, catIdx) => {
-        const programs = getShuffledPrograms();
-        // Duplicating for the infinite marquee effect
-        const displayPrograms = [...programs, ...programs];
+      {categories.map((category, catIdx) => {
+        const catItems = items.filter(i => i.category_id === category.id);
+        if (catItems.length === 0) return null;
+
+        // Duplicating for the infinite marquee effect if we have items
+        const displayPrograms = [...catItems, ...catItems];
         
         return (
-          <div key={category} className="w-full">
-            <div className="flex flex-col px-4 md:px-0 mb-3">
-              <h2 className="text-xl md:text-2xl font-bold text-white tracking-wide mb-2">{category}</h2>
+          <div key={category.id} className="w-full">
+              <h2 className="text-xl md:text-2xl font-bold text-white tracking-wide mb-2">{category.name}</h2>
               <div className="h-[2px] w-full bg-gradient-to-r from-red-600 to-yellow-400 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
             </div>
             
@@ -69,10 +80,9 @@ export function FakeScheduleCarousels() {
                     <div className="relative z-10 p-5 h-[160px] flex flex-col justify-end">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex flex-col items-start gap-1">
-                          <span className="text-[10px] font-bold text-white/70 bg-black/50 px-1.5 py-0.5 rounded border border-white/5">HOJE</span>
                           <div className="flex items-center gap-1.5 text-[#00f0ff] font-mono text-xs bg-[#00f0ff]/10 px-2 py-1 rounded">
                             <Clock size={14} />
-                            {program.time}
+                            {program.time_label}
                           </div>
                         </div>
                         <PlayCircle size={24} className="text-white/50 group-hover/card:text-[#00f0ff] transition-colors mt-1" />
@@ -119,7 +129,7 @@ export function FakeScheduleCarousels() {
                     {activeItem.genre}
                   </span>
                   <span className="text-white/60 text-sm font-mono flex items-center gap-1.5">
-                    <Clock size={14} /> {activeItem.duration}
+                    <Clock size={14} /> {activeItem.duration_label}
                   </span>
                 </div>
                 <h2 className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg">{activeItem.title}</h2>
@@ -140,10 +150,18 @@ export function FakeScheduleCarousels() {
                 </div>
               </div>
               
-              <div className="pt-6 border-t border-white/10 flex justify-end">
+              <div className="pt-6 border-t border-white/10 flex justify-end gap-4">
+                {activeItem.video_url && (
+                  <button 
+                    onClick={() => window.open(activeItem.video_url, '_blank')}
+                    className="bg-[#00f0ff] hover:bg-white text-[#051622] font-bold py-3 px-8 rounded-xl transition-all shadow-[0_0_15px_rgba(0,240,255,0.4)] flex items-center gap-2"
+                  >
+                    <PlayCircle size={20} /> Assistir Agora
+                  </button>
+                )}
                 <button 
                   onClick={() => setActiveItem(null)}
-                  className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-xl transition-all hover:scale-105 shadow-[0_0_15px_rgba(220,38,38,0.5)]"
+                  className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-[0_0_15px_rgba(220,38,38,0.5)]"
                 >
                   Voltar para a Página
                 </button>

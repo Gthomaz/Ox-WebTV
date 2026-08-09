@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Save, Link as LinkIcon, Home, Layout, ShieldAlert, Lock, Image as ImageIcon, Plus, Trash2, GripVertical } from 'lucide-react';
+import VODManager from './VODManager';
 
 export default function FrontendDepartment() {
   const [activeSubTab, setActiveSubTab] = useState<'textos'|'home'|'vod'|'fiscalizacao'|'login'>('textos');
@@ -242,19 +243,7 @@ export default function FrontendDepartment() {
 
         {/* TAB 5: VOD (Nossa Grade) */}
         {activeSubTab === 'vod' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white">Gerenciador de Prateleiras (VOD)</h2>
-              <button className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2">
-                <Plus size={16} /> Nova Prateleira
-              </button>
-            </div>
-            
-            <div className="bg-black/50 border border-white/5 rounded-xl p-8 text-center text-white/50">
-              <p>Módulo de VOD (Video on Demand) será implementado em seguida.</p>
-              <p className="text-sm mt-2">Você poderá criar categorias (Sessão Pipoca, Destaques) e adicionar vídeos nelas.</p>
-            </div>
-          </div>
+          <VODManager />
         )}
 
       </div>
