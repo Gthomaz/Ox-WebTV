@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import VideoPlayer from "@/components/VideoPlayer";
 import { ProgramSchedule } from "@/components/ProgramSchedule";
 import { ChatSection } from "@/components/ChatSection";
