@@ -203,26 +203,31 @@ export default function VideoPlayer() {
           return;
         }
 
-        setUrl(data.videoUrl);
-        setUseNativeFallback(!data.videoUrl.includes('.m3u8'));
-        setCurrentProgramTitle(data.title || 'Programação OXTV');
-        setPlayerErrorMsg('');
-        
-        if (data.seekTo > 0 && !data.isLive) {
-          setTimeout(() => {
-            try {
-              if (!data.videoUrl.includes('.m3u8') && nativeVideoRef.current) {
-                nativeVideoRef.current.currentTime = data.seekTo;
-              } else if (reactPlayerRef.current && typeof reactPlayerRef.current.seekTo === 'function') {
-                reactPlayerRef.current.seekTo(data.seekTo, 'seconds');
-              } else if (reactPlayerRef.current) {
-                console.warn("reactPlayerRef.current.seekTo não é uma função no momento.");
-              }
-            } catch (err) {
-              console.error("Erro ao aplicar seekTo no player:", err);
+        setUrl((prevUrl) => {
+          if (prevUrl !== data.videoUrl) {
+            setUseNativeFallback(!data.videoUrl.includes('.m3u8'));
+            setCurrentProgramTitle(data.title || 'Programação OXTV');
+            setPlayerErrorMsg('');
+            
+            if (data.seekTo > 0 && !data.isLive) {
+              setTimeout(() => {
+                try {
+                  if (!data.videoUrl.includes('.m3u8') && nativeVideoRef.current) {
+                    nativeVideoRef.current.currentTime = data.seekTo;
+                  } else if (reactPlayerRef.current && typeof reactPlayerRef.current.seekTo === 'function') {
+                    reactPlayerRef.current.seekTo(data.seekTo, 'seconds');
+                  } else if (reactPlayerRef.current) {
+                    console.warn("reactPlayerRef.current.seekTo não é uma função no momento.");
+                  }
+                } catch (err) {
+                  console.error("Erro ao aplicar seekTo no player:", err);
+                }
+              }, 1500);
             }
-          }, 1500); // Aumentando um pouco o delay para dar tempo ao player de montar completamente
-        }
+            return data.videoUrl;
+          }
+          return prevUrl; // Não mudou de vídeo, não faz seek
+        });
         
         setWatermarkUrl(data.watermarkUrl || '');
         setWatermarkOpacity(1);
@@ -244,8 +249,14 @@ export default function VideoPlayer() {
 
     fetchStatusAndPrograms();
 
+    // Polling contínuo (Heartbeat) a cada 5 segundos para virar a grade automaticamente
+    const pollInterval = setInterval(() => {
+      fetchStatusAndPrograms();
+    }, 5000);
+
+    let channel: any = null;
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const channel = supabase
+      channel = supabase
         .channel('schema-db-changes')
         .on(
           'postgres_changes',
@@ -255,11 +266,14 @@ export default function VideoPlayer() {
           }
         )
         .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
     }
+
+    return () => {
+      clearInterval(pollInterval);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
 
