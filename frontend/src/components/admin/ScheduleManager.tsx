@@ -353,7 +353,7 @@ export default function ScheduleManager() {
         </div>
       </div>
 
-      <div className="mb-6 border border-white/10 rounded-lg flex-1 overflow-y-auto custom-scrollbar relative">
+      <div className="mb-6 border border-white/10 rounded-lg flex-1 min-h-[300px] overflow-y-auto custom-scrollbar relative">
         <table className="w-full text-left border-collapse text-sm">
           <thead className="bg-[#051622] sticky top-0 z-20 shadow-md">
             <tr className="border-b border-white/20 text-white/50 uppercase tracking-wider">
