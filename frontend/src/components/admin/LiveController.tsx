@@ -99,13 +99,13 @@ export default function LiveController() {
 
       <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6">
         <Radio className={isLive ? "text-red-500 animate-pulse" : "text-white/40"} />
-        Controle de Transmissão Mestra
+        Ao Vivo (Estúdio / Podcast / Repórter)
       </h2>
 
       <div className="flex items-center justify-between bg-black/40 p-4 rounded-xl border border-white/5 mb-6">
         <div>
-          <h3 className="text-white font-semibold mb-1">Interrupção de Emergência / Ao Vivo</h3>
-          <p className="text-white/50 text-xs">Corta a grade gravada instantaneamente e transmite o link M3U8.</p>
+          <h3 className="text-white font-semibold mb-1">Entrar no Ar Imediatamente</h3>
+          <p className="text-white/50 text-xs">Corta a grade gravada instantaneamente e transmite o link do OBS/vMix.</p>
         </div>
         
         <button 
@@ -129,7 +129,7 @@ export default function LiveController() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-semibold text-white/70 uppercase">URL do Sinal Ao Vivo (M3U8)</label>
+        <label className="text-xs font-semibold text-white/70 uppercase">URL da Transmissão do OBS / vMix (M3U8)</label>
         <div className="flex gap-3">
           <input 
             type="url" 

@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Loader2, MessageSquare, MapPin, Phone, Mail, Image as ImageIcon, Calendar as CalendarIcon, X, CheckCircle, AlertTriangle, Trash2, LayoutGrid, Video, ListTodo, BarChart3 } from 'lucide-react';
-import LiveController from '@/components/admin/LiveController';
 
 const STATUSES = ["Pendente", "Em Averiguação", "Em Solução", "Resolvido"];
 
-export default function AdminBoardPage() {
+export default function DenunciasDepartment() {
   const [reports, setReports] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<any>(null);
@@ -169,16 +168,11 @@ export default function AdminBoardPage() {
           <div className="flex gap-4">
             <a 
               href="/denuncias" 
+              target="_blank"
               className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-xl transition-colors flex items-center shadow-sm"
             >
               Ver Portal Público
-            </a>
-            <button 
-              onClick={() => setIsLiveModalOpen(true)}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-xl transition-colors flex items-center gap-2 shadow-md animate-pulse hover:animate-none"
-            >
-              <Video className="w-5 h-5" /> Entrar Ao Vivo
-            </button>
+            </a>>
           </div>
         </div>
 
@@ -567,27 +561,6 @@ export default function AdminBoardPage() {
               </div>
             </div>
 
-          </div>
-        </div>
-      )}
-      {/* MODAL DE CONTROLE AO VIVO */}
-      {isLiveModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#020b14] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-[#00f0ff]/30 animate-in zoom-in-95">
-            <div className="bg-[#051622] p-4 flex justify-between items-center border-b border-white/10">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Video className="text-red-500" /> Transmissão Ao Vivo - OX WebTV
-              </h2>
-              <button 
-                onClick={() => setIsLiveModalOpen(false)}
-                className="text-white/60 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            <div className="p-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
-              <LiveController />
-            </div>
           </div>
         </div>
       )}

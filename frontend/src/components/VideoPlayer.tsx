@@ -545,7 +545,20 @@ export default function VideoPlayer() {
              <p className="text-white text-2xl font-bold leading-snug mb-8">{pollQuestion}</p>
              <div className="space-y-3">
                {pollOptions?.map((option, idx) => (
-                 <button key={idx} onClick={() => setHasVoted(true)} className="w-full bg-[#0e4b77]/40 hover:bg-[#00f0ff] hover:text-[#051622] border border-[#0e4b77] hover:border-[#00f0ff] text-white py-3 px-6 rounded-xl font-semibold transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] hover:scale-[1.02]">
+                 <button 
+                   key={idx} 
+                   onClick={async () => {
+                     setHasVoted(true);
+                     try {
+                       await fetch('/api/polls/vote', {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json' },
+                         body: JSON.stringify({ question: pollQuestion, option_index: idx })
+                       });
+                     } catch(e) {}
+                   }} 
+                   className="w-full bg-[#0e4b77]/40 hover:bg-[#00f0ff] hover:text-[#051622] border border-[#0e4b77] hover:border-[#00f0ff] text-white py-3 px-6 rounded-xl font-semibold transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] hover:scale-[1.02]"
+                 >
                    {option}
                  </button>
                ))}
