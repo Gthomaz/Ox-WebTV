@@ -20,6 +20,8 @@ export async function GET() {
         title: 'Transmissão Ao Vivo',
         seekTo: 0,
         watermarkUrl: broadcast.watermark_url,
+        watermarkOpacity: broadcast.watermark_opacity,
+        watermarkPosition: broadcast.watermark_position,
         activeBanner: broadcast.active_banner,
         pollQuestion: broadcast.active_poll_question,
         pollOptions: broadcast.active_poll_options,
@@ -92,6 +94,8 @@ export async function GET() {
               title: currentItem.title,
               seekTo: seekTo,
               watermarkUrl: broadcast?.watermark_url,
+              watermarkOpacity: broadcast?.watermark_opacity,
+              watermarkPosition: broadcast?.watermark_position,
               activeBanner: broadcast?.active_banner,
             });
           }
@@ -112,6 +116,8 @@ export async function GET() {
       title: 'Programação Local (Fallback)',
       seekTo: fallbackSeek,
       watermarkUrl: broadcast?.watermark_url,
+      watermarkOpacity: broadcast?.watermark_opacity,
+      watermarkPosition: broadcast?.watermark_position,
       activeBanner: broadcast?.active_banner,
     });
 

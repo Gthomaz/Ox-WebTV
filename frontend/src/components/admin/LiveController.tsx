@@ -8,27 +8,53 @@ export default function LiveController() {
   const [isLive, setIsLive] = useState(false);
   const [liveUrl, setLiveUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Watermark Settings
+  const [watermarkUrl, setWatermarkUrl] = useState('');
+  const [watermarkOpacity, setWatermarkOpacity] = useState(1);
+  const [watermarkSize, setWatermarkSize] = useState(100);
+  const [watermarkHPos, setWatermarkHPos] = useState(95);
+  const [watermarkVPos, setWatermarkVPos] = useState(95);
+  const [isSavingVisual, setIsSavingVisual] = useState(false);
 
   useEffect(() => {
     fetchCurrent();
     
     // Subscribe to changes so it stays in sync if another admin changes it
-    const channel = supabase.channel('broadcast-admin')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'broadcast_control' }, payload => {
-        setIsLive(payload.new.is_live);
-        setLiveUrl(payload.new.live_url || '');
-      })
-      .subscribe();
+      const channel = supabase.channel('broadcast-admin')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'broadcast_control' }, payload => {
+          setIsLive(payload.new.is_live);
+          setLiveUrl(payload.new.live_url || '');
+          
+          setWatermarkUrl(payload.new.watermark_url || '');
+          setWatermarkOpacity(payload.new.watermark_opacity ?? 1);
+          try {
+            const pos = JSON.parse(payload.new.watermark_position || '{}');
+            setWatermarkSize(pos.size ?? 100);
+            setWatermarkHPos(pos.hpos ?? 95);
+            setWatermarkVPos(pos.vpos ?? 95);
+          } catch(e) {}
+        })
+        .subscribe();
       
     return () => { supabase.removeChannel(channel); };
   }, []);
 
   const fetchCurrent = async () => {
-    const { data } = await supabase.from('broadcast_control').select('is_live, live_url').single();
+    const { data } = await supabase.from('broadcast_control').select('*').single();
     if (data) {
       const settings = data as any;
       setIsLive(settings.is_live);
       setLiveUrl(settings.live_url || '');
+      
+      setWatermarkUrl(settings.watermark_url || '');
+      setWatermarkOpacity(settings.watermark_opacity ?? 1);
+      try {
+        const pos = JSON.parse(settings.watermark_position || '{}');
+        setWatermarkSize(pos.size ?? 100);
+        setWatermarkHPos(pos.hpos ?? 95);
+        setWatermarkVPos(pos.vpos ?? 95);
+      } catch(e) {}
     }
   };
 
@@ -45,6 +71,23 @@ export default function LiveController() {
     await supabase.from('broadcast_control').update({ live_url: liveUrl }).eq('id', 1);
     setIsSaving(false);
     alert('URL Ao Vivo Atualizada!');
+  };
+
+  const handleSaveVisual = async () => {
+    setIsSavingVisual(true);
+    const positionJson = JSON.stringify({
+      size: watermarkSize,
+      hpos: watermarkHPos,
+      vpos: watermarkVPos
+    });
+    
+    await supabase.from('broadcast_control').update({ 
+      watermark_url: watermarkUrl,
+      watermark_opacity: watermarkOpacity,
+      watermark_position: positionJson
+    }).eq('id', 1);
+    setIsSavingVisual(false);
+    alert('Identidade Visual Salva e Atualizada nos Players!');
   };
 
   return (
@@ -105,11 +148,89 @@ export default function LiveController() {
         </div>
       </div>
 
-      <div className="mt-6 flex items-start gap-3 text-xs text-yellow-500/80 bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20">
+      <div className="mt-6 flex items-start gap-3 text-xs text-yellow-500/80 bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20 mb-6">
         <AlertCircle size={16} className="shrink-0 mt-0.5" />
         <p>
           <strong>Sincronia Mágica:</strong> Ao clicar em "Encerrar Ao Vivo", o sistema não volta o vídeo gravado do começo, nem de onde parou. Ele <strong>avança no tempo</strong> a quantidade exata de minutos que se passaram, comportando-se exatamente como uma emissora de TV real.
         </p>
+      </div>
+
+      {/* Visual Config Section */}
+      <div className="border-t border-white/10 pt-6 mt-6">
+        <h3 className="text-lg font-bold text-white mb-4">Identidade Visual (Logo no Player)</h3>
+        
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-white/70 uppercase">URL da Logo (PNG transparente)</label>
+            <input 
+              type="url" 
+              value={watermarkUrl}
+              onChange={e => setWatermarkUrl(e.target.value)}
+              placeholder="https://sua-imagem.png"
+              className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-[#00f0ff] outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-white/70 uppercase flex justify-between">
+                <span>Tamanho (%)</span>
+                <span className="text-[#00f0ff]">{watermarkSize}%</span>
+              </label>
+              <input 
+                type="range" min="10" max="300" step="5"
+                value={watermarkSize} onChange={e => setWatermarkSize(Number(e.target.value))}
+                className="w-full accent-[#00f0ff]"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-white/70 uppercase flex justify-between">
+                <span>Transparência (Visibilidade)</span>
+                <span className="text-[#00f0ff]">{Math.round(watermarkOpacity * 100)}%</span>
+              </label>
+              <input 
+                type="range" min="0" max="1" step="0.05"
+                value={watermarkOpacity} onChange={e => setWatermarkOpacity(Number(e.target.value))}
+                className="w-full accent-[#00f0ff]"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-white/70 uppercase flex justify-between">
+                <span>Posição Horizontal</span>
+                <span className="text-[#00f0ff]">{watermarkHPos}%</span>
+              </label>
+              <input 
+                type="range" min="0" max="100" step="1"
+                value={watermarkHPos} onChange={e => setWatermarkHPos(Number(e.target.value))}
+                className="w-full accent-[#00f0ff]"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-white/70 uppercase flex justify-between">
+                <span>Posição Vertical</span>
+                <span className="text-[#00f0ff]">{watermarkVPos}%</span>
+              </label>
+              <input 
+                type="range" min="0" max="100" step="1"
+                value={watermarkVPos} onChange={e => setWatermarkVPos(Number(e.target.value))}
+                className="w-full accent-[#00f0ff]"
+              />
+            </div>
+          </div>
+
+          <button 
+            onClick={handleSaveVisual}
+            disabled={isSavingVisual}
+            className="w-full bg-[#0e4b77] hover:bg-[#00f0ff] hover:text-[#051622] text-white font-bold py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(0,240,255,0.3)] mt-2"
+          >
+            {isSavingVisual ? 'Salvando...' : 'Aplicar Visual no Player'}
+          </button>
+        </div>
       </div>
     </div>
   );
