@@ -172,7 +172,7 @@ export default function DenunciasDepartment() {
               className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-xl transition-colors flex items-center shadow-sm"
             >
               Ver Portal Público
-            </a>>
+            </a>
           </div>
         </div>
 
