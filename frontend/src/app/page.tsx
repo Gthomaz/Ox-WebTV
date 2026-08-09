@@ -11,7 +11,9 @@ export default function Home() {
   const [settings, setSettings] = useState({
     title: 'OX WebTV',
     slogan: 'Acompanhe nossa programação ao vivo ou as melhores gravações.',
-    image: ''
+    image: '',
+    height: '300px',
+    width: '100%'
   });
 
   useEffect(() => {
@@ -23,7 +25,9 @@ export default function Home() {
         setSettings({
           title: data.home_banner_title || 'OX WebTV',
           slogan: data.home_slogan || 'Acompanhe nossa programação ao vivo ou as melhores gravações.',
-          image: data.home_banner_image || ''
+          image: data.home_banner_image || '',
+          height: data.home_banner_height || '300px',
+          width: data.home_banner_width || '100%'
         });
       }
     };
@@ -38,7 +42,10 @@ export default function Home() {
       <div className="w-full px-4 sm:px-6 lg:px-8 z-10 flex flex-col items-center max-w-7xl mx-auto space-y-10">
         
         {/* Title area (Dynamic Banner) */}
-        <div className={`w-full rounded-2xl overflow-hidden relative ${settings.image ? 'min-h-[300px]' : 'bg-gradient-to-br from-[#00f0ff]/20 to-[#0e4b77]/20 border border-white/10 py-16'}`}>
+        <div 
+          className={`w-full rounded-2xl overflow-hidden relative ${settings.image ? '' : 'bg-gradient-to-br from-[#00f0ff]/20 to-[#0e4b77]/20 border border-white/10 py-16'}`}
+          style={{ minHeight: settings.height, width: settings.width, maxWidth: '100%' }}
+        >
           {settings.image && (
             <img src={settings.image} alt="Banner" className="absolute inset-0 w-full h-full object-cover opacity-60" />
           )}

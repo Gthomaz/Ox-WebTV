@@ -16,6 +16,8 @@ export default function FrontendDepartment() {
     home_slogan: '',
     home_banner_title: '',
     home_banner_image: '',
+    home_banner_height: '300px',
+    home_banner_width: '100%',
     fiscalizacao_instructions: '',
     login_welcome_text: '',
     register_welcome_text: ''
@@ -39,6 +41,8 @@ export default function FrontendDepartment() {
           home_slogan: data.home_slogan || '',
           home_banner_title: data.home_banner_title || '',
           home_banner_image: data.home_banner_image || '',
+          home_banner_height: data.home_banner_height || '300px',
+          home_banner_width: data.home_banner_width || '100%',
           fiscalizacao_instructions: data.fiscalizacao_instructions || '',
           login_welcome_text: data.login_welcome_text || '',
           register_welcome_text: data.register_welcome_text || ''
@@ -187,7 +191,32 @@ export default function FrontendDepartment() {
                   className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-[#00f0ff] outline-none"
                   placeholder="https://suaimagem.com/banner.jpg"
                 />
-                <p className="text-xs text-white/40">Se vazio, usaremos o gradiente amarelo/neon padrão.</p>
+                <p className="text-xs text-white/40">Se vazio, usaremos o gradiente padrão.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="space-y-2">
+                  <label className="text-white/70 text-sm font-bold">Altura do Banner</label>
+                  <input 
+                    type="text" 
+                    value={settings.home_banner_height} 
+                    onChange={e => handleChange('home_banner_height', e.target.value)}
+                    className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-[#00f0ff] outline-none"
+                    placeholder="Ex: 300px ou 50vh"
+                  />
+                  <p className="text-xs text-white/40">Exemplos: 200px, 400px, 50vh</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-white/70 text-sm font-bold">Largura do Banner</label>
+                  <input 
+                    type="text" 
+                    value={settings.home_banner_width} 
+                    onChange={e => handleChange('home_banner_width', e.target.value)}
+                    className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-[#00f0ff] outline-none"
+                    placeholder="Ex: 100% ou 800px"
+                  />
+                  <p className="text-xs text-white/40">Exemplos: 100%, 80%, 1200px</p>
+                </div>
               </div>
             </div>
           </div>
