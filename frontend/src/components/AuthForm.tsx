@@ -24,6 +24,25 @@ export default function AuthForm({ type }: AuthFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Dynamic Text Settings
+  const [welcomeText, setWelcomeText] = useState({
+    login: 'Entre para acessar a grade completa e interagir.',
+    register: 'Junte-se à maior plataforma de TV Digital da região.'
+  });
+
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await supabase.from('site_settings').select('login_welcome_text, register_welcome_text').eq('id', 1).single();
+      if (data) {
+        setWelcomeText({
+          login: data.login_welcome_text || 'Entre para acessar a grade completa e interagir.',
+          register: data.register_welcome_text || 'Junte-se à maior plataforma de TV Digital da região.'
+        });
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/[^\d]/g, '');
@@ -90,9 +109,7 @@ export default function AuthForm({ type }: AuthFormProps) {
             {type === 'login' ? 'Bem-vindo de volta' : 'Criar Conta'}
           </h2>
           <p className="text-white/50 text-sm">
-            {type === 'login' 
-              ? 'Entre para acessar a grade completa e interagir.' 
-              : 'Junte-se à maior plataforma de TV Digital do planeta.'}
+            {type === 'login' ? welcomeText.login : welcomeText.register}
           </p>
         </div>
 

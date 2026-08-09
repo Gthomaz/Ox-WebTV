@@ -3,18 +3,19 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { LayoutDashboard, LogOut, MonitorPlay, AlertTriangle, BarChart2, Tv } from 'lucide-react';
+import { LayoutDashboard, LogOut, MonitorPlay, AlertTriangle, BarChart2, Tv, Palette } from 'lucide-react';
 import Image from 'next/image';
 import Logo from '@/assets/Ox-Tv-Logo-Transparent.png';
 
 import TVDepartment from '@/components/admin/departments/TVDepartment';
 import DenunciasDepartment from '@/components/admin/departments/DenunciasDepartment';
 import PollsDepartment from '@/components/admin/departments/PollsDepartment';
+import FrontendDepartment from '@/components/admin/departments/FrontendDepartment';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'tv' | 'denuncias' | 'enquetes'>('tv');
+  const [activeTab, setActiveTab] = useState<'tv' | 'denuncias' | 'enquetes' | 'frontend'>('tv');
 
   useEffect(() => {
     checkAuth();
@@ -76,6 +77,16 @@ export default function AdminDashboard() {
             <BarChart2 size={20} className={activeTab === 'enquetes' ? 'text-yellow-400' : ''} />
             Enquetes Programadas
           </button>
+
+          <button 
+            onClick={() => setActiveTab('frontend')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold ${
+              activeTab === 'frontend' ? 'bg-[#0e4b77] text-white shadow-[0_0_15px_rgba(0,240,255,0.2)] border border-[#00f0ff]/20' : 'text-white/60 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <Palette size={20} className={activeTab === 'frontend' ? 'text-pink-400' : ''} />
+            Portal & CMS
+          </button>
         </div>
 
         <div className="p-4 border-t border-white/5">
@@ -102,6 +113,7 @@ export default function AdminDashboard() {
           {activeTab === 'tv' && <TVDepartment />}
           {activeTab === 'denuncias' && <div className="h-full overflow-y-auto custom-scrollbar"><DenunciasDepartment /></div>}
           {activeTab === 'enquetes' && <PollsDepartment />}
+          {activeTab === 'frontend' && <div className="h-full overflow-y-auto custom-scrollbar"><FrontendDepartment /></div>}
         </div>
       </main>
     </div>

@@ -186,6 +186,7 @@ function FeedPost({ denuncia, onDelete }: { denuncia: any, onDelete: (id: number
 export default function DenunciasPage() {
   const [activeTab, setActiveTab] = useState<'feed' | 'nova'>('feed');
   const [denuncias, setDenuncias] = useState<any[]>([]);
+  const [instructions, setInstructions] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchReports = async () => {
@@ -197,13 +198,23 @@ export default function DenunciasPage() {
       }
     } catch (error) {
       console.error("Failed to fetch reports:", error);
-    } finally {
-      setIsLoading(false);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data } = await supabase.from('site_settings').select('fiscalizacao_instructions').eq('id', 1).single();
+      if (data && data.fiscalizacao_instructions) {
+        setInstructions(data.fiscalizacao_instructions);
+      }
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
     }
   };
 
   useEffect(() => {
-    fetchReports();
+    Promise.all([fetchReports(), fetchSettings()]).finally(() => setIsLoading(false));
   }, []);
 
   const handleDenunciaEnviada = () => {
@@ -316,20 +327,26 @@ export default function DenunciasPage() {
             <div className="hidden lg:block space-y-8">
               <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-8">
                 <h3 className="font-extrabold text-gray-900 text-xl mb-5 border-b-2 border-gray-100 pb-3">Como funciona?</h3>
-                <ul className="space-y-5 text-gray-700 font-medium">
-                  <li className="flex items-start">
-                    <span className="bg-red-100 text-red-600 font-black rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0 mt-0.5 shadow-sm">1</span>
-                    Você registra o problema com fotos, vídeo e endereço detalhado.
-                  </li>
-                  <li className="flex items-start">
-                    <span className="bg-red-100 text-red-600 font-black rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0 mt-0.5 shadow-sm">2</span>
-                    A denúncia entra no Feed Público para a população apoiar e comentar.
-                  </li>
-                  <li className="flex items-start">
-                    <span className="bg-red-100 text-red-600 font-black rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0 mt-0.5 shadow-sm">3</span>
-                    O moderador cobra as soluções devidas dos órgãos responsáveis.
-                  </li>
-                </ul>
+                {instructions ? (
+                  <div className="space-y-5 text-gray-700 font-medium whitespace-pre-wrap">
+                    {instructions}
+                  </div>
+                ) : (
+                  <ul className="space-y-5 text-gray-700 font-medium">
+                    <li className="flex items-start">
+                      <span className="bg-red-100 text-red-600 font-black rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0 mt-0.5 shadow-sm">1</span>
+                      Você registra o problema com fotos, vídeo e endereço detalhado.
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-red-100 text-red-600 font-black rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0 mt-0.5 shadow-sm">2</span>
+                      A denúncia entra no Feed Público para a população apoiar e comentar.
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-red-100 text-red-600 font-black rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0 mt-0.5 shadow-sm">3</span>
+                      O moderador cobra as soluções devidas dos órgãos responsáveis.
+                    </li>
+                  </ul>
+                )}
               </div>
 
               <div className="bg-[#051622] text-white rounded-2xl shadow-xl p-8 relative overflow-hidden">

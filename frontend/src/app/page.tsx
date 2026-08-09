@@ -5,10 +5,29 @@ import VideoPlayer from "@/components/VideoPlayer";
 import { ProgramSchedule } from "@/components/ProgramSchedule";
 import { ChatSection } from "@/components/ChatSection";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 export default function Home() {
+  const [settings, setSettings] = useState({
+    title: 'OX WebTV',
+    slogan: 'Acompanhe nossa programação ao vivo ou as melhores gravações.',
+    image: ''
+  });
+
   useEffect(() => {
     window.scrollTo(0, 0);
+    
+    const fetchSettings = async () => {
+      const { data } = await supabase.from('site_settings').select('*').eq('id', 1).single();
+      if (data) {
+        setSettings({
+          title: data.home_banner_title || 'OX WebTV',
+          slogan: data.home_slogan || 'Acompanhe nossa programação ao vivo ou as melhores gravações.',
+          image: data.home_banner_image || ''
+        });
+      }
+    };
+    fetchSettings();
   }, []);
 
   return (
@@ -18,11 +37,21 @@ export default function Home() {
       
       <div className="w-full px-4 sm:px-6 lg:px-8 z-10 flex flex-col items-center max-w-7xl mx-auto space-y-10">
         
-        {/* Title area */}
-        <div className="text-center space-y-4">
-          <p className="text-white/60 max-w-2xl mx-auto font-light">
-            Acompanhe nossa programação ao vivo ou as melhores gravações.
-          </p>
+        {/* Title area (Dynamic Banner) */}
+        <div className={`w-full rounded-2xl overflow-hidden relative ${settings.image ? 'min-h-[300px]' : 'bg-gradient-to-br from-[#00f0ff]/20 to-[#0e4b77]/20 border border-white/10 py-16'}`}>
+          {settings.image && (
+            <img src={settings.image} alt="Banner" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#020b14] via-[#020b14]/60 to-transparent"></div>
+          
+          <div className="relative z-10 text-center space-y-4 px-6 py-12 flex flex-col items-center justify-center h-full">
+            <h1 className="text-3xl md:text-5xl font-bold text-white max-w-4xl leading-tight drop-shadow-lg">
+              {settings.title}
+            </h1>
+            <p className="text-white/80 max-w-2xl mx-auto font-light text-lg">
+              {settings.slogan}
+            </p>
+          </div>
         </div>
 
         {/* Main Player Component */}
