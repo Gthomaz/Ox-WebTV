@@ -61,11 +61,13 @@ export default function FrontendDepartment() {
   const handleSaveSettings = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase.from('site_settings').upsert({
-        id: 1,
+      // First ensure the row exists
+      await supabase.from('site_settings').insert({ id: 1 }).select();
+      // Then update it
+      const { error } = await supabase.from('site_settings').update({
         ...settings,
-        updated_at: new Date()
-      });
+        updated_at: new Date().toISOString()
+      }).eq('id', 1);
       if (error) throw error;
       alert('Configurações salvas com sucesso!');
     } catch (err: any) {
