@@ -291,7 +291,7 @@ export default function ScheduleManager() {
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
-    <div className="bg-[#051622] rounded-2xl border border-white/10 p-6 flex flex-col h-full overflow-hidden">
+    <div className="bg-[#051622] rounded-2xl border border-white/10 p-6 flex flex-col h-full overflow-y-auto custom-scrollbar">
       <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           <CalendarIcon className="text-[#00f0ff]" />

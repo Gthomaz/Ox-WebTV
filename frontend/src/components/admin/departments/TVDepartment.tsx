@@ -66,7 +66,7 @@ export default function TVDepartment() {
       </div>
 
       {/* Coluna Direita: Gerenciador de Grade Diária */}
-      <div className="xl:col-span-8 flex flex-col h-full overflow-hidden bg-[#051622] rounded-2xl border border-white/10 p-4 shadow-xl">
+      <div className="xl:col-span-8 flex flex-col h-full min-h-0">
         <ScheduleManager />
       </div>
     </div>
