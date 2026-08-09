@@ -69,25 +69,20 @@ export async function GET() {
         .order('start_time_seconds', { ascending: true }); // Mantém a ordem definida no painel
 
       if (items && items.length > 0) {
-        // Calcula a duração total da playlist
         const totalPlaylistDuration = items.reduce((acc, curr) => acc + curr.duration_seconds, 0);
         
         if (totalPlaylistDuration > 0) {
-          // Matemática de Módulo: Onde estamos no loop agora?
-          const loopSeconds = secondsSinceMidnight % totalPlaylistDuration;
-          
-          let accumulatedTime = 0;
           let currentItem = null;
           let seekTo = 0;
 
-          // Encontra qual vídeo está rodando neste exato segundo do loop
+          // Percorre a grade buscando o vídeo que deveria estar tocando no exato segundo atual
           for (const item of items) {
-            if (accumulatedTime + item.duration_seconds > loopSeconds) {
+            const itemEnd = item.start_time_seconds + item.duration_seconds;
+            if (secondsSinceMidnight >= item.start_time_seconds && secondsSinceMidnight < itemEnd) {
               currentItem = item;
-              seekTo = loopSeconds - accumulatedTime;
+              seekTo = secondsSinceMidnight - item.start_time_seconds;
               break;
             }
-            accumulatedTime += item.duration_seconds;
           }
 
           if (currentItem) {
@@ -104,12 +99,12 @@ export async function GET() {
       }
     }
 
-    // 5. Fallback (Se não tiver grade pra hoje ou se não encontrou vídeo no horário)
-    // Toca um vídeo padrão de loop (fallback)
+    // 5. Fallback (Se não tiver grade pra hoje ou se não encontrou vídeo no horário - BURACO NA GRADE)
+    // Toca um vídeo padrão de fallback
     const fallbackUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
     
-    // Fallback sync: usa modulo de 1 hora
-    const fallbackSeek = secondsSinceMidnight % 3600; 
+    // O fallback dura várias horas, fazemos um modulo longo para não travar
+    const fallbackSeek = secondsSinceMidnight % 43200; 
 
     return NextResponse.json({
       isLive: false,
