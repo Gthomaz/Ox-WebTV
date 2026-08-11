@@ -24,15 +24,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   },
   global: {
     headers: { 'x-my-custom-header': 'ox-tv-bot' },
+  },
+  realtime: {
+    transport: WebSocket,
   }
 });
-// Para contornar o erro de WebSocket no Node 20:
-global.WebSocket = WebSocket;
 
 
-// Configuração de Pastas
-const RAW_DIR = path.join(process.cwd(), 'raw_videos');
-const OUT_DIR = path.join(process.cwd(), '../frontend/public/uploads');
+// Configuração de Pastas (Caminhos Absolutos para não ter erro!)
+const RAW_DIR = '/var/www/oxwebtv/raw_videos';
+const OUT_DIR = '/var/www/oxwebtv/frontend/public/uploads';
 
 fs.ensureDirSync(RAW_DIR);
 fs.ensureDirSync(OUT_DIR);
@@ -48,6 +49,8 @@ const queue = [];
 const watcher = chokidar.watch(RAW_DIR, {
   ignored: /(^|[\/\\])\../, // ignora arquivos ocultos
   persistent: true,
+  usePolling: true,
+  interval: 2000,
   awaitWriteFinish: {
     stabilityThreshold: 5000, // Aguarda 5 segundos sem mudanças no tamanho do arquivo para confirmar que o upload (FileZilla) terminou
     pollInterval: 1000
@@ -55,10 +58,32 @@ const watcher = chokidar.watch(RAW_DIR, {
 });
 
 watcher.on('add', (filePath) => {
-  console.log(`[+] Novo arquivo detectado para conversão: ${path.basename(filePath)}`);
-  queue.push(filePath);
-  processQueue();
+  console.log(`[+] Novo arquivo detectado pelo watcher: ${path.basename(filePath)}`);
+  if (!queue.includes(filePath)) {
+    queue.push(filePath);
+    processQueue();
+  }
 });
+
+setTimeout(() => {
+  try {
+    console.log(`🔍 [DEBUG] Lendo a pasta manualmente: ${RAW_DIR}`);
+    const files = fs.readdirSync(RAW_DIR);
+    console.log(`🔍 [DEBUG] Arquivos encontrados na pasta: ${JSON.stringify(files)}`);
+    for (const file of files) {
+      if (!file.startsWith('.')) {
+        const fullPath = path.join(RAW_DIR, file);
+        if (!queue.includes(fullPath)) {
+          console.log(`[+] Arquivo antigo encontrado na pasta. Colocando na fila: ${file}`);
+          queue.push(fullPath);
+        }
+      }
+    }
+    processQueue();
+  } catch(e) {
+    console.error(`❌ [DEBUG] Erro ao ler a pasta:`, e);
+  }
+}, 2000);
 
 async function processQueue() {
   if (isConverting || queue.length === 0) return;
@@ -88,16 +113,17 @@ async function processQueue() {
     console.log(`✅ Conversão concluída com sucesso!`);
     
     // 4. Salvar no Banco de Dados (Supabase)
-    const VPS_IP = '187.127.44.246';
-    const publicUrl = `http://${VPS_IP}/uploads/${path.basename(mp4Output)}`;
+    const publicUrl = `https://cdn.oxtv.com.br/uploads/${path.basename(mp4Output)}`;
     
     console.log(`📡 Salvando no banco de dados OX TV...`);
-    const { error } = await supabase.from('filmes').insert([{
+    const { error } = await supabase.from('site_carousel_items').insert([{
       title: filename.replace(/_/g, ' '),
       video_url: publicUrl,
-      duration_seconds: durationSec,
-      cover_url: 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&q=80&w=1000',
-      category: 'Outros'
+      thumbnail_url: 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&q=80&w=1000',
+      genre: 'Filme',
+      duration_label: `${Math.floor(durationSec / 60)} min`,
+      description: 'Processado automaticamente pelo robô da OX TV.',
+      is_active: true
     }]);
 
     if (error) {
