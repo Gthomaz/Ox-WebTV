@@ -3,8 +3,6 @@
 import React, { useEffect, useState, Component, ErrorInfo } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import dynamic from 'next/dynamic';
 import { Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -78,10 +76,8 @@ function WatchPageContent() {
   }, [id]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#051622]">
-      <Header />
-      
-      <main className="flex-1 flex flex-col relative w-full items-center">
+    <div className="min-h-screen flex flex-col bg-[#051622] w-full">
+      <div className="flex-1 flex flex-col relative w-full items-center">
         {loading ? (
           <div className="flex-1 flex flex-col items-center justify-center pt-20 pb-40">
             <Loader2 size={64} className="text-[#00f0ff] animate-spin mb-6" />
@@ -143,9 +139,7 @@ function WatchPageContent() {
             </div>
           </div>
         )}
-      </main>
-
-      <Footer />
+      </div>
     </div>
   );
 }
