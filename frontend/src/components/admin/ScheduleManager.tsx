@@ -207,6 +207,48 @@ export default function ScheduleManager() {
     }
   };
 
+  const handleEditVodMovie = async (movie: any) => {
+    const rawDate = movie.playing_date ? new Date(movie.playing_date + 'T12:00:00') : (movie.created_at ? new Date(movie.created_at) : new Date());
+    const currentDate = rawDate.toISOString().split('T')[0];
+    
+    const newTitle = window.prompt('Editar Título do Vídeo:', movie.title || movie.titulo || '');
+    if (newTitle === null) return;
+    
+    const newPlayingDate = window.prompt('Editar Playing Date (AAAA-MM-DD):', currentDate);
+    if (newPlayingDate === null) return;
+
+    if (newTitle.trim() === '') return alert('O título não pode ser vazio.');
+    
+    // Validate date format
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(newPlayingDate)) {
+      return alert('Formato de data inválido. Use AAAA-MM-DD.');
+    }
+
+    const { error } = await supabase.from('filmes').update({
+      title: newTitle.trim(),
+      playing_date: newPlayingDate
+    }).eq('id', movie.id);
+
+    if (error) {
+      alert('Erro ao atualizar: ' + error.message);
+    } else {
+      fetchVodMovies();
+    }
+  };
+
+  const updateVodCategory = async (movieId: number, newCategory: string) => {
+    const { error } = await supabase.from('filmes').update({
+      category: newCategory
+    }).eq('id', movieId);
+    
+    if (error) {
+      alert('Erro ao atualizar categoria: ' + error.message);
+    } else {
+      fetchVodMovies();
+    }
+  };
+
   const handleRemoveItem = async (itemId: number, itemDuration: number) => {
     await supabase.from('schedule_items').delete().eq('id', itemId);
     
@@ -235,8 +277,83 @@ export default function ScheduleManager() {
     setDragOverIndex(null);
   };
 
+  const handleVodDragStart = (e: React.DragEvent, movie: any) => {
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('application/json', JSON.stringify({ type: 'vod', movie }));
+  };
+
   const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
+    
+    // Check if it's a drop from VOD library
+    const vodDataStr = e.dataTransfer.getData('application/json');
+    if (vodDataStr) {
+      try {
+        const vodData = JSON.parse(vodDataStr);
+        if (vodData && vodData.type === 'vod') {
+          const m = vodData.movie;
+          let currentScheduleId = scheduleId;
+          
+          if (!currentScheduleId) {
+            const { data: newSched, error } = await supabase
+              .from('daily_schedule')
+              .insert([{ schedule_date: selectedDate, total_duration_seconds: 0 }])
+              .select().single();
+            if (error) throw error;
+            currentScheduleId = newSched.id;
+          }
+
+          const durationSec = m.duration_seconds || m.duracao_segundos || 0;
+          const title = m.title || m.titulo || 'Sem Título';
+          const url = m.video_url || m.url || '';
+
+          const { error: itemError, data: newItem } = await supabase
+            .from('schedule_items')
+            .insert([{
+              daily_schedule_id: currentScheduleId,
+              title: title,
+              video_url: url,
+              duration_seconds: durationSec,
+              start_time_seconds: 0,
+              sort_order: dropIndex
+            }]).select().single();
+
+          if (itemError) throw itemError;
+
+          const newItems = [...items];
+          newItems.splice(dropIndex, 0, newItem);
+
+          let currentStartTime = 0;
+          const updates = newItems.map((item, i) => {
+            const updatedItem = {
+              ...item,
+              start_time_seconds: currentStartTime,
+              sort_order: i
+            };
+            currentStartTime += item.duration_seconds;
+            return updatedItem;
+          });
+
+          setItems(updates);
+          handleDragEnd();
+
+          for (const item of updates) {
+            await supabase.from('schedule_items').update({ 
+              start_time_seconds: item.start_time_seconds,
+              sort_order: item.sort_order 
+            }).eq('id', item.id);
+          }
+          
+          const newTotal = updates.reduce((acc, curr) => acc + curr.duration_seconds, 0);
+          await supabase.from('daily_schedule').update({ total_duration_seconds: newTotal }).eq('id', currentScheduleId);
+          fetchScheduleForDate(selectedDate);
+          return;
+        }
+      } catch (err) {
+        console.error('Error dropping VOD:', err);
+      }
+    }
+
     if (draggedIndex === null || draggedIndex === dropIndex) {
       handleDragEnd();
       return;
@@ -537,26 +654,54 @@ export default function ScheduleManager() {
           <table className="w-full text-left border-collapse text-sm min-w-[700px]">
             <thead className="bg-[#051622] sticky top-0 z-20 shadow-md">
               <tr className="border-b border-white/20 text-white/50 uppercase tracking-wider text-xs">
-                <th className="py-1 px-4 border-r border-white/10">Data</th>
-                <th className="py-1 px-4 border-r border-white/10">Nome do Vídeo</th>
-                <th className="py-1 px-4 border-r border-white/10 text-center">Duração</th>
-                <th className="py-1 px-4 border-r border-white/10 text-center">Formato</th>
-                <th className="py-1 px-4 border-r border-white/10 text-center">Adicionar</th>
-                <th className="py-1 px-4 text-center">Excluir</th>
+                <th className="py-1 px-3 border-x border-white/10 w-10 text-center">ID</th>
+                <th className="py-1 px-4 border-r border-white/10 w-28 text-center">Playing Date</th>
+                <th className="py-1 px-4 border-r border-white/10 text-left">Nome do Vídeo</th>
+                <th className="py-1 px-4 border-r border-white/10 w-32 text-center">Categoria</th>
+                <th className="py-1 px-4 border-r border-white/10 w-24 text-center">Duração</th>
+                <th className="py-1 px-4 border-r border-white/10 w-20 text-center">Formato</th>
+                <th className="py-1 px-4 border-r border-white/10 w-32 text-center">Adicionar</th>
+                <th className="py-1 px-4 border-r border-white/10 w-16 text-center">Editar</th>
+                <th className="py-1 px-4 w-16 text-center">Excluir</th>
               </tr>
             </thead>
             <tbody>
-              {vodMovies.map((movie) => {
+              {vodMovies.map((movie, index) => {
                 const mTitle = movie.title || movie.titulo || 'Sem Título';
                 const mUrl = movie.video_url || movie.url || '';
                 const mDuration = movie.duration_seconds || movie.duracao_segundos || 0;
                 const mFormat = mUrl.includes('.mp4') ? 'MP4' : (mUrl.includes('.webm') ? 'WEBM' : 'Outro');
-                const mDate = movie.created_at ? new Date(movie.created_at).toLocaleDateString('pt-BR') : '-';
+                const rawDate = movie.playing_date ? new Date(movie.playing_date + 'T12:00:00') : (movie.created_at ? new Date(movie.created_at) : new Date());
+                const mDate = rawDate.toLocaleDateString('pt-BR');
+                const mCategory = movie.category || 'Outros';
                 
                 return (
-                  <tr key={movie.id} className="border-b border-white/5 hover:bg-white/5 transition-colors text-white">
-                    <td className="py-1 px-4 border-r border-white/10 text-white/60 whitespace-nowrap">{mDate}</td>
-                    <td className="py-1 px-4 border-r border-white/10 font-medium truncate max-w-[250px]" title={mTitle}>{mTitle}</td>
+                  <tr 
+                    key={movie.id} 
+                    draggable
+                    onDragStart={(e) => handleVodDragStart(e, movie)}
+                    className="border-b border-white/5 hover:bg-white/5 transition-colors text-white cursor-grab active:cursor-grabbing"
+                  >
+                    <td className="py-1 px-3 border-x border-white/10 text-center text-[#00f0ff] font-bold">{index + 1}</td>
+                    <td className="py-1 px-4 border-r border-white/10 text-white/60 whitespace-nowrap text-center font-mono">{mDate}</td>
+                    <td className="py-1 px-4 border-r border-white/10 font-medium truncate max-w-[200px] xl:max-w-[250px]" title={mTitle}>{mTitle}</td>
+                    <td className="py-1 px-4 border-r border-white/10 text-center">
+                      <select 
+                        value={mCategory}
+                        onChange={(e) => updateVodCategory(movie.id, e.target.value)}
+                        className="bg-black/50 border border-white/10 rounded px-2 py-1 text-white/80 text-xs focus:border-[#00f0ff] outline-none w-full"
+                      >
+                        <option value="Podcast">Podcast</option>
+                        <option value="Filme">Filme</option>
+                        <option value="Série">Série</option>
+                        <option value="Documentário">Documentário</option>
+                        <option value="Esportes">Esportes</option>
+                        <option value="Jornalismo">Jornalismo</option>
+                        <option value="Musical">Musical</option>
+                        <option value="Infantil">Infantil</option>
+                        <option value="Outros">Outros</option>
+                      </select>
+                    </td>
                     <td className="py-1 px-4 border-r border-white/10 text-[#00f0ff] font-mono text-center">{formatTime(mDuration)}</td>
                     <td className="py-1 px-4 border-r border-white/10 text-center">
                       <span className="bg-white/10 px-2 py-1 rounded text-xs text-white/70">{mFormat}</span>
@@ -566,7 +711,16 @@ export default function ScheduleManager() {
                         onClick={() => handleAddFromUpload(mTitle, mUrl, mDuration, '')}
                         className="bg-[#00f0ff]/10 text-[#00f0ff] hover:bg-[#00f0ff] hover:text-[#051622] px-3 py-1.5 rounded text-xs font-bold transition-all shadow-[0_0_10px_rgba(0,240,255,0)] hover:shadow-[0_0_15px_rgba(0,240,255,0.4)] whitespace-nowrap"
                       >
-                        + Adicionar à Grade
+                        ADD À GRADE
+                      </button>
+                    </td>
+                    <td className="py-1 px-4 border-r border-white/10 text-center">
+                      <button 
+                        onClick={() => handleEditVodMovie(movie)}
+                        className="text-white/50 hover:text-[#00f0ff] p-1.5 rounded transition-colors"
+                        title="Editar Vídeo"
+                      >
+                        <Edit2 size={16} />
                       </button>
                     </td>
                     <td className="py-1 px-4 text-center">
