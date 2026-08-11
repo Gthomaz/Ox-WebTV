@@ -393,7 +393,7 @@ export default function ScheduleManager() {
           <thead className="bg-[#051622] sticky top-0 z-20 shadow-md">
             <tr className="border-b border-white/20 text-white/50 uppercase tracking-wider text-xs">
               <th className="py-1 px-3 border-x border-white/10 w-10 text-center">ID</th>
-              <th className="py-1 px-3 border-r border-white/10 w-full text-left">Título do Vídeo</th>
+              <th className="py-1 px-3 border-r border-white/10 text-left">Título do Vídeo</th>
               <th className="py-1 px-3 border-r border-white/10 w-24 text-center">Duração</th>
               <th className="py-1 px-3 border-r border-white/10 w-24 text-center">Cronômetro</th>
               <th className="py-1 px-3 border-r border-white/10 w-24 text-center">Data</th>
@@ -419,7 +419,7 @@ export default function ScheduleManager() {
                 className={`border-b border-white/5 transition-colors group text-white cursor-grab active:cursor-grabbing ${draggedIndex === index ? 'opacity-50' : ''} ${dragOverIndex === index ? 'bg-white/10 border-t-2 border-t-[#00f0ff]' : ''} ${playing ? 'bg-[#0e4b77]/40 border-l-4 border-l-[#00f0ff]' : 'hover:bg-white/10'}`}
               >
                 <td className="py-1 px-3 border-x border-white/10 text-center text-[#00f0ff] font-bold">{index + 1}</td>
-                <td className="py-1 px-3 border-r border-white/10 font-medium truncate max-w-[300px] xl:max-w-[450px]" title={item.title}>{item.title}</td>
+                <td className="py-1 px-3 border-r border-white/10 font-medium truncate max-w-[200px] xl:max-w-[250px]" title={item.title}>{item.title}</td>
                 <td className="py-1 px-3 border-r border-white/10 text-center text-white/60">
                   {item.duration_seconds >= 60 
                     ? `${Math.floor(item.duration_seconds / 60)}m ${item.duration_seconds % 60 > 0 ? (item.duration_seconds % 60) + 's' : ''}`
