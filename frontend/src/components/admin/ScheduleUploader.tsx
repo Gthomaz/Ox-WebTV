@@ -173,6 +173,7 @@ export default function ScheduleUploader({ onUploadComplete }: ScheduleUploaderP
               <option value="Esportes">Esportes</option>
               <option value="Jornalismo">Jornalismo</option>
               <option value="Musical">Musical</option>
+              <option value="Propaganda">Propaganda</option>
               <option value="Infantil">Infantil</option>
               <option value="Outros">Outros</option>
             </select>
