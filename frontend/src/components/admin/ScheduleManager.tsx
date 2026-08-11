@@ -30,6 +30,9 @@ export default function ScheduleManager() {
   // VOD Library State
   const [vodMovies, setVodMovies] = useState<any[]>([]);
 
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   const [newTitle, setNewTitle] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [newDuration, setNewDuration] = useState(''); 
@@ -200,17 +203,31 @@ export default function ScheduleManager() {
     fetchScheduleForDate(selectedDate);
   };
 
-  const handleReorder = async (index: number, direction: 'up' | 'down') => {
-    if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === items.length - 1) return;
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      handleDragEnd();
+      return;
+    }
 
     const newItems = [...items];
-    const swapIndex = direction === 'up' ? index - 1 : index + 1;
-    
-    // Swap items
-    const temp = newItems[index];
-    newItems[index] = newItems[swapIndex];
-    newItems[swapIndex] = temp;
+    const [removed] = newItems.splice(draggedIndex, 1);
+    newItems.splice(dropIndex, 0, removed);
 
     // Recalculate start times linearly for the whole list to maintain proper loop sequence
     let currentStartTime = 0;
@@ -226,6 +243,7 @@ export default function ScheduleManager() {
 
     // Optimistic UI update
     setItems(updates);
+    handleDragEnd();
 
     // Persist to DB (sequentially since bulk upsert requires all primary keys)
     try {
@@ -357,45 +375,34 @@ export default function ScheduleManager() {
         <table className="w-full text-left border-collapse text-sm">
           <thead className="bg-[#051622] sticky top-0 z-20 shadow-md">
             <tr className="border-b border-white/20 text-white/50 uppercase tracking-wider">
-              <th className="py-3 px-3 border-x border-white/10">Título do Vídeo</th>
-              <th className="py-3 px-3 border-r border-white/10">Duração</th>
-              <th className="py-3 px-3 border-r border-white/10">Horário (Play)</th>
-              <th className="py-3 px-3 border-r border-white/10 w-16 text-center">Ordem</th>
-              <th className="py-3 px-3 border-r border-white/10 text-center">Editar</th>
-              <th className="py-3 px-3 text-center">Excluir</th>
+              <th className="py-1 px-3 border-x border-white/10 w-12 text-center">ID</th>
+              <th className="py-1 px-3 border-r border-white/10">Título do Vídeo</th>
+              <th className="py-1 px-3 border-r border-white/10">Duração</th>
+              <th className="py-1 px-3 border-r border-white/10">Horário (Play)</th>
+              <th className="py-1 px-3 border-r border-white/10 text-center">Editar</th>
+              <th className="py-1 px-3 text-center">Excluir</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => (
-              <tr key={item.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group text-white">
-                <td className="py-3 px-3 border-x border-white/10 font-medium truncate max-w-[200px]" title={item.title}>{item.title}</td>
-                <td className="py-3 px-3 border-r border-white/10 text-white/60">
+            {items.map((item, index) => (
+              <tr 
+                key={item.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragEnd={handleDragEnd}
+                onDrop={(e) => handleDrop(e, index)}
+                className={`border-b border-white/5 hover:bg-white/10 transition-colors group text-white cursor-grab active:cursor-grabbing ${draggedIndex === index ? 'opacity-50' : ''} ${dragOverIndex === index ? 'bg-white/10 border-t-2 border-t-[#00f0ff]' : ''}`}
+              >
+                <td className="py-1 px-3 border-x border-white/10 text-center text-[#00f0ff] font-bold">{index + 1}</td>
+                <td className="py-1 px-3 border-r border-white/10 font-medium truncate max-w-[200px]" title={item.title}>{item.title}</td>
+                <td className="py-1 px-3 border-r border-white/10 text-white/60">
                   {item.duration_seconds >= 60 
                     ? `${Math.floor(item.duration_seconds / 60)}m ${item.duration_seconds % 60 > 0 ? (item.duration_seconds % 60) + 's' : ''}`
                     : `${item.duration_seconds} seg`}
                 </td>
-                <td className="py-3 px-3 border-r border-white/10 font-mono text-[#00f0ff]">{formatTime(item.start_time_seconds)}</td>
-                <td className="py-3 px-3 border-r border-white/10 text-center">
-                  <div className="flex flex-col items-center justify-center gap-1">
-                    <button 
-                      onClick={() => handleReorder(items.indexOf(item), 'up')}
-                      disabled={items.indexOf(item) === 0}
-                      className="text-white/40 hover:text-[#00f0ff] disabled:opacity-20 disabled:hover:text-white/40 p-0.5 rounded transition-colors"
-                      title="Mover para cima"
-                    >
-                      <ChevronUp size={18} />
-                    </button>
-                    <button 
-                      onClick={() => handleReorder(items.indexOf(item), 'down')}
-                      disabled={items.indexOf(item) === items.length - 1}
-                      className="text-white/40 hover:text-[#00f0ff] disabled:opacity-20 disabled:hover:text-white/40 p-0.5 rounded transition-colors"
-                      title="Mover para baixo"
-                    >
-                      <ChevronDown size={18} />
-                    </button>
-                  </div>
-                </td>
-                <td className="py-3 px-3 border-r border-white/10 text-center">
+                <td className="py-1 px-3 border-r border-white/10 font-mono text-[#00f0ff]">{formatTime(item.start_time_seconds)}</td>
+                <td className="py-1 px-3 border-r border-white/10 text-center">
                   <button 
                     onClick={() => handleEditItem(item.id, item.title, item.start_time_seconds)}
                     className="text-[#00f0ff]/50 hover:text-[#00f0ff] p-1 rounded transition-colors"
@@ -404,7 +411,7 @@ export default function ScheduleManager() {
                     <Edit2 size={16} />
                   </button>
                 </td>
-                <td className="py-3 px-3 text-center">
+                <td className="py-1 px-3 text-center">
                   <button 
                     onClick={() => handleRemoveItem(item.id, item.duration_seconds)}
                     className="text-red-500/50 hover:text-red-400 p-1 rounded transition-colors"
@@ -417,7 +424,7 @@ export default function ScheduleManager() {
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-white/40 border-x border-white/10">
+                <td colSpan={6} className="py-8 text-center text-white/40 border-x border-white/10">
                   Nenhum programa agendado para esta data.
                 </td>
               </tr>
@@ -426,12 +433,12 @@ export default function ScheduleManager() {
           {items.length > 0 && (
             <tfoot className="bg-[#051622]/95 backdrop-blur sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] border-t border-white/20">
               <tr className="text-[#00f0ff] font-bold">
-                <td className="py-3 px-3 border-x border-white/10 text-right uppercase text-xs">Total do Dia:</td>
-                <td className="py-3 px-3 border-r border-white/10">{formatTime(totalDuration)}</td>
-                <td className="py-3 px-3 border-r border-white/10"></td>
-                <td className="py-3 px-3 border-r border-white/10"></td>
-                <td className="py-3 px-3 border-r border-white/10"></td>
-                <td className="py-3 px-3"></td>
+                <td className="py-1 px-3 border-x border-white/10"></td>
+                <td className="py-1 px-3 border-r border-white/10 text-right uppercase text-xs">Total do Dia:</td>
+                <td className="py-1 px-3 border-r border-white/10">{formatTime(totalDuration)}</td>
+                <td className="py-1 px-3 border-r border-white/10"></td>
+                <td className="py-1 px-3 border-r border-white/10"></td>
+                <td className="py-1 px-3"></td>
               </tr>
             </tfoot>
           )}
@@ -500,12 +507,12 @@ export default function ScheduleManager() {
           <table className="w-full text-left border-collapse text-sm min-w-[700px]">
             <thead className="bg-[#051622] sticky top-0 z-20 shadow-md">
               <tr className="border-b border-white/20 text-white/50 uppercase tracking-wider text-xs">
-                <th className="py-3 px-4 border-r border-white/10">Data</th>
-                <th className="py-3 px-4 border-r border-white/10">Nome do Vídeo</th>
-                <th className="py-3 px-4 border-r border-white/10 text-center">Duração</th>
-                <th className="py-3 px-4 border-r border-white/10 text-center">Formato</th>
-                <th className="py-3 px-4 border-r border-white/10 text-center">Adicionar</th>
-                <th className="py-3 px-4 text-center">Excluir</th>
+                <th className="py-1 px-4 border-r border-white/10">Data</th>
+                <th className="py-1 px-4 border-r border-white/10">Nome do Vídeo</th>
+                <th className="py-1 px-4 border-r border-white/10 text-center">Duração</th>
+                <th className="py-1 px-4 border-r border-white/10 text-center">Formato</th>
+                <th className="py-1 px-4 border-r border-white/10 text-center">Adicionar</th>
+                <th className="py-1 px-4 text-center">Excluir</th>
               </tr>
             </thead>
             <tbody>
@@ -518,13 +525,13 @@ export default function ScheduleManager() {
                 
                 return (
                   <tr key={movie.id} className="border-b border-white/5 hover:bg-white/5 transition-colors text-white">
-                    <td className="py-3 px-4 border-r border-white/10 text-white/60 whitespace-nowrap">{mDate}</td>
-                    <td className="py-3 px-4 border-r border-white/10 font-medium truncate max-w-[250px]" title={mTitle}>{mTitle}</td>
-                    <td className="py-3 px-4 border-r border-white/10 text-[#00f0ff] font-mono text-center">{formatTime(mDuration)}</td>
-                    <td className="py-3 px-4 border-r border-white/10 text-center">
+                    <td className="py-1 px-4 border-r border-white/10 text-white/60 whitespace-nowrap">{mDate}</td>
+                    <td className="py-1 px-4 border-r border-white/10 font-medium truncate max-w-[250px]" title={mTitle}>{mTitle}</td>
+                    <td className="py-1 px-4 border-r border-white/10 text-[#00f0ff] font-mono text-center">{formatTime(mDuration)}</td>
+                    <td className="py-1 px-4 border-r border-white/10 text-center">
                       <span className="bg-white/10 px-2 py-1 rounded text-xs text-white/70">{mFormat}</span>
                     </td>
-                    <td className="py-3 px-4 border-r border-white/10 text-center">
+                    <td className="py-1 px-4 border-r border-white/10 text-center">
                       <button
                         onClick={() => handleAddFromUpload(mTitle, mUrl, mDuration, '')}
                         className="bg-[#00f0ff]/10 text-[#00f0ff] hover:bg-[#00f0ff] hover:text-[#051622] px-3 py-1.5 rounded text-xs font-bold transition-all shadow-[0_0_10px_rgba(0,240,255,0)] hover:shadow-[0_0_15px_rgba(0,240,255,0.4)] whitespace-nowrap"
@@ -532,7 +539,7 @@ export default function ScheduleManager() {
                         + Adicionar à Grade
                       </button>
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-1 px-4 text-center">
                       <button 
                         onClick={() => handleRemoveVodMovie(movie.id)}
                         className="text-red-500/50 hover:text-red-400 p-1.5 rounded transition-colors bg-red-500/5 hover:bg-red-500/20"
