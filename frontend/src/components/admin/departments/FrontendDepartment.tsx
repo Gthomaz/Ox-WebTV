@@ -212,13 +212,15 @@ export default function FrontendDepartment() {
           <div className="space-y-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-white">Homepage (Página Inicial)</h2>
-              <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-                <span className="text-white/80 font-bold text-sm">Exibir Banner na Home:</span>
+              <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10 shrink-0">
+                <span className="text-white/80 font-bold text-sm hidden sm:inline">Exibir Banner:</span>
+                <span className="text-white/80 font-bold text-sm sm:hidden">Exibir:</span>
                 <button
+                  type="button"
                   onClick={() => handleChange('home_banner_active', !settings.home_banner_active as any)}
-                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${settings.home_banner_active ? 'bg-green-500' : 'bg-red-500'}`}
+                  className={`w-12 h-6 shrink-0 rounded-full transition-colors relative flex items-center ${settings.home_banner_active ? 'bg-green-500' : 'bg-red-500'}`}
                 >
-                  <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${settings.home_banner_active ? 'right-1' : 'left-1'}`}></div>
+                  <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${settings.home_banner_active ? 'translate-x-7' : 'translate-x-1'}`}></div>
                 </button>
               </div>
             </div>
