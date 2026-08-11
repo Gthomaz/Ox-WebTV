@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Component, ErrorInfo } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Header } from '@/components/Header';
@@ -11,7 +11,40 @@ import Link from 'next/link';
 
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;
 
-export default function WatchPage() {
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#051622] flex flex-col items-center justify-center p-8 text-white">
+          <AlertCircle size={64} className="text-red-500 mb-6" />
+          <h1 className="text-3xl font-bold mb-4">CRASH DETECTADO!</h1>
+          <p className="text-lg text-white/80 mb-6">Por favor, tire um print desta tela e mande pro Antigravity:</p>
+          <div className="bg-red-500/20 border border-red-500 p-6 rounded-xl w-full max-w-3xl overflow-auto text-left font-mono">
+            <h2 className="text-red-400 font-bold text-xl mb-2">{this.state.error?.name}: {this.state.error?.message}</h2>
+            <pre className="text-sm text-red-300/80 mt-4 whitespace-pre-wrap">{this.state.error?.stack}</pre>
+          </div>
+          <Link href="/grade" className="mt-8 bg-[#00f0ff] text-[#051622] px-8 py-3 rounded-xl font-bold">Voltar</Link>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function WatchPageContent() {
   const params = useParams();
   const id = params?.id as string;
 
@@ -81,7 +114,7 @@ export default function WatchPage() {
                    playing={true}
                    config={{
                      file: {
-                       forceHLS: movie.video_url.includes('.m3u8')
+                       forceHLS: typeof movie.video_url === 'string' && movie.video_url.includes('.m3u8')
                      }
                    }}
                  />
@@ -114,5 +147,13 @@ export default function WatchPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function WatchPage() {
+  return (
+    <ErrorBoundary>
+      <WatchPageContent />
+    </ErrorBoundary>
   );
 }
