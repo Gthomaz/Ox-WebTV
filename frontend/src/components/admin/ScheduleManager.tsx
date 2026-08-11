@@ -391,15 +391,15 @@ export default function ScheduleManager() {
       <div className="mb-6 border border-white/10 rounded-lg flex-1 min-h-[300px] overflow-y-auto custom-scrollbar relative">
         <table className="w-full text-left border-collapse text-sm">
           <thead className="bg-[#051622] sticky top-0 z-20 shadow-md">
-            <tr className="border-b border-white/20 text-white/50 uppercase tracking-wider">
-              <th className="py-1 px-3 border-x border-white/10 w-12 text-center">ID</th>
-              <th className="py-1 px-3 border-r border-white/10">Título do Vídeo</th>
-              <th className="py-1 px-3 border-r border-white/10">Duração</th>
-              <th className="py-1 px-3 border-r border-white/10 text-center">Cronômetro</th>
-              <th className="py-1 px-3 border-r border-white/10 text-center">Data (Play)</th>
-              <th className="py-1 px-3 border-r border-white/10">Horário (Play)</th>
-              <th className="py-1 px-3 border-r border-white/10 text-center">Editar</th>
-              <th className="py-1 px-3 text-center">Excluir</th>
+            <tr className="border-b border-white/20 text-white/50 uppercase tracking-wider text-xs">
+              <th className="py-1 px-3 border-x border-white/10 w-10 text-center">ID</th>
+              <th className="py-1 px-3 border-r border-white/10 w-full text-left">Título do Vídeo</th>
+              <th className="py-1 px-3 border-r border-white/10 w-24 text-center">Duração</th>
+              <th className="py-1 px-3 border-r border-white/10 w-24 text-center">Cronômetro</th>
+              <th className="py-1 px-3 border-r border-white/10 w-24 text-center">Data</th>
+              <th className="py-1 px-3 border-r border-white/10 w-24 text-center">Horário</th>
+              <th className="py-1 px-3 border-r border-white/10 w-16 text-center">Editar</th>
+              <th className="py-1 px-3 w-16 text-center">Excluir</th>
             </tr>
           </thead>
           <tbody>
@@ -419,8 +419,8 @@ export default function ScheduleManager() {
                 className={`border-b border-white/5 transition-colors group text-white cursor-grab active:cursor-grabbing ${draggedIndex === index ? 'opacity-50' : ''} ${dragOverIndex === index ? 'bg-white/10 border-t-2 border-t-[#00f0ff]' : ''} ${playing ? 'bg-[#0e4b77]/40 border-l-4 border-l-[#00f0ff]' : 'hover:bg-white/10'}`}
               >
                 <td className="py-1 px-3 border-x border-white/10 text-center text-[#00f0ff] font-bold">{index + 1}</td>
-                <td className="py-1 px-3 border-r border-white/10 font-medium truncate max-w-[200px]" title={item.title}>{item.title}</td>
-                <td className="py-1 px-3 border-r border-white/10 text-white/60">
+                <td className="py-1 px-3 border-r border-white/10 font-medium truncate max-w-[300px] xl:max-w-[450px]" title={item.title}>{item.title}</td>
+                <td className="py-1 px-3 border-r border-white/10 text-center text-white/60">
                   {item.duration_seconds >= 60 
                     ? `${Math.floor(item.duration_seconds / 60)}m ${item.duration_seconds % 60 > 0 ? (item.duration_seconds % 60) + 's' : ''}`
                     : `${item.duration_seconds} seg`}
@@ -429,7 +429,7 @@ export default function ScheduleManager() {
                   {playing ? formatTime(countdown!) : '-'}
                 </td>
                 <td className="py-1 px-3 border-r border-white/10 text-center font-mono text-white/60">{formattedDate}</td>
-                <td className="py-1 px-3 border-r border-white/10 font-mono text-[#00f0ff]">{formatTime(item.start_time_seconds)}</td>
+                <td className="py-1 px-3 border-r border-white/10 text-center font-mono text-[#00f0ff]">{formatTime(item.start_time_seconds)}</td>
                 <td className="py-1 px-3 border-r border-white/10 text-center">
                   <button 
                     onClick={() => handleEditItem(item.id, item.title, item.start_time_seconds)}
