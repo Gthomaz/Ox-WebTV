@@ -1,52 +1,87 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Clock, PlayCircle } from 'lucide-react';
 
-interface Program {
+interface ScheduleItem {
   id: number;
   title: string;
-  url: string;
-  start_time: string;
-  thumbnail_url?: string;
-  description?: string;
+  video_url: string;
+  thumbnail_url: string;
+  duration_seconds: number;
+  start_time_seconds: number;
 }
 
 export function ProgramSchedule() {
-  const [programs, setPrograms] = useState<Program[]>([]);
+  const [items, setItems] = useState<ScheduleItem[]>([]);
+  const [currentSeconds, setCurrentSeconds] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  const getBrasiliaTime = () => {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(now);
+    const getPart = (type: string) => parts.find(p => p.type === type)?.value;
+    
+    const year = getPart('year');
+    const month = getPart('month');
+    const day = getPart('day');
+    const hour = parseInt(getPart('hour') || '0', 10);
+    const minute = parseInt(getPart('minute') || '0', 10);
+    const second = parseInt(getPart('second') || '0', 10);
 
-  useEffect(() => {
-    const fetchPrograms = async () => {
-      const { data } = await supabase.from('programacao').select('*').order('sort_order', { ascending: true });
-      if (data) setPrograms(data);
+    return {
+      dateStr: `${year}-${month}-${day}`,
+      secondsSinceMidnight: hour * 3600 + minute * 60 + second
     };
-
-    fetchPrograms();
-
-    // Subscribe to realtime updates
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const channel = supabase
-        .channel('programacao-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'programacao' }, () => {
-          fetchPrograms();
-        })
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, []);
-
-  const formatTime = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const formatDate = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  useEffect(() => {
+    const fetchTodaySchedule = async () => {
+      const { dateStr, secondsSinceMidnight } = getBrasiliaTime();
+      setCurrentSeconds(secondsSinceMidnight);
+
+      const { data: schedule } = await supabase
+        .from('daily_schedule')
+        .select('id')
+        .eq('schedule_date', dateStr)
+        .single();
+
+      if (schedule) {
+        const { data: scheduleItems } = await supabase
+          .from('schedule_items')
+          .select('*')
+          .eq('daily_schedule_id', schedule.id)
+          .order('start_time_seconds', { ascending: true });
+        
+        if (scheduleItems) {
+          setItems(scheduleItems);
+        }
+      } else {
+        setItems([]);
+      }
+    };
+
+    fetchTodaySchedule();
+
+    const interval = setInterval(() => {
+      const { secondsSinceMidnight } = getBrasiliaTime();
+      setCurrentSeconds(secondsSinceMidnight);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTimeStr = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -56,56 +91,23 @@ export function ProgramSchedule() {
         <div className="h-[2px] w-full bg-gradient-to-r from-red-600 to-yellow-400 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
       </div>
       
-      <div className="relative w-full bg-black/20 border-y border-white/5 py-4 md:py-6 md:overflow-hidden">
-        
-        {/* Mobile: Vertical List */}
-        <div className="flex md:hidden flex-col gap-4 max-h-[50vh] overflow-y-auto px-4" style={{ scrollbarWidth: 'none' }}>
-          {programs.map((program, idx) => (
-            <div 
-              key={`mobile-${program.id}-${idx}`}
-              className="w-full flex-shrink-0 rounded-2xl overflow-hidden relative group bg-black border border-white/10 hover:border-[#00f0ff]/50 transition-colors"
-            >
-              <div className="absolute inset-0 z-0">
-                {program.thumbnail_url ? (
-                  <img src={program.thumbnail_url} alt={program.title} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#0e4b77] to-[#051622] opacity-80" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
-              </div>
-              <div className="relative z-10 p-4 h-[120px] flex flex-col justify-end">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex flex-col items-start gap-1">
-                    <span className="text-[10px] font-bold text-white/70 bg-black/50 px-1.5 py-0.5 rounded border border-white/5">{formatDate(program.start_time)}</span>
-                    <div className="flex items-center gap-1.5 text-[#00f0ff] font-mono text-xs bg-[#00f0ff]/10 px-2 py-1 rounded">
-                      <Clock size={14} />
-                      {formatTime(program.start_time)}
-                    </div>
-                  </div>
-                </div>
-                <h3 className="text-base font-bold text-white leading-tight mb-1 line-clamp-1">{program.title}</h3>
-                {program.description && (
-                  <p className="text-xs text-white/60 line-clamp-1">{program.description}</p>
-                )}
-              </div>
-            </div>
-          ))}
-          {programs.length === 0 && (
-             <div className="text-white/40 py-4 text-sm text-center">Nenhum programa na grade no momento.</div>
-          )}
-        </div>
+      <div className="relative w-full bg-black/20 border-y border-white/5 py-4 md:py-6 overflow-x-auto custom-scrollbar" ref={scrollContainerRef}>
+        <div className="flex gap-4 px-4 w-max items-center">
+          {items.map((program, idx) => {
+            const isPlaying = currentSeconds >= program.start_time_seconds && currentSeconds < (program.start_time_seconds + program.duration_seconds);
+            const isPast = currentSeconds >= (program.start_time_seconds + program.duration_seconds);
 
-        {/* Desktop: Infinite Marquee Carousel */}
-        <div className="hidden md:flex w-full overflow-hidden pb-4 group relative">
-          <div className="flex gap-6 animate-marquee hover:[animation-play-state:paused] w-max px-4">
-            {[...programs, ...programs].map((program, idx) => (
+            return (
               <div 
-                key={`desktop-${program.id}-${idx}`}
-                className="w-[240px] flex-shrink-0 rounded-2xl overflow-hidden relative group/card bg-black border border-white/10 hover:border-[#00f0ff]/50 transition-colors cursor-pointer"
+                key={`schedule-${program.id}-${idx}`}
+                className={`w-[240px] flex-shrink-0 rounded-2xl overflow-hidden relative group bg-black transition-all duration-300
+                  ${isPlaying ? 'border-2 border-[#00f0ff] shadow-[0_0_15px_rgba(0,240,255,0.4)] transform scale-[1.03] mx-2' : 'border border-white/10 hover:border-white/30'}
+                  ${isPast ? 'opacity-50 grayscale' : 'opacity-100'}
+                `}
               >
                 <div className="absolute inset-0 z-0">
                   {program.thumbnail_url ? (
-                    <img src={program.thumbnail_url} alt={program.title} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover/card:opacity-60 transition-opacity duration-500" />
+                    <img src={program.thumbnail_url} alt={program.title} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-[#0e4b77] to-[#051622] opacity-80" />
                   )}
@@ -114,27 +116,24 @@ export function ProgramSchedule() {
                 <div className="relative z-10 p-4 h-[135px] flex flex-col justify-end">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex flex-col items-start gap-1">
-                      <span className="text-[9px] font-bold text-white/70 bg-black/50 px-1.5 py-0.5 rounded border border-white/5">{formatDate(program.start_time)}</span>
-                      <div className="flex items-center gap-1 text-[#00f0ff] font-mono text-[10px] bg-[#00f0ff]/10 px-1.5 py-0.5 rounded">
+                      {isPlaying && (
+                         <span className="text-[10px] font-bold text-[#051622] bg-[#00f0ff] px-2 py-0.5 rounded-full mb-1 animate-pulse tracking-widest">NO AR</span>
+                      )}
+                      <div className="flex items-center gap-1.5 text-white/90 font-mono text-xs bg-white/10 px-2 py-1 rounded">
                         <Clock size={12} />
-                        {formatTime(program.start_time)}
+                        {formatTimeStr(program.start_time_seconds)}
                       </div>
                     </div>
-                    <PlayCircle size={20} className="text-white/50 group-hover/card:text-[#00f0ff] transition-colors mt-1" />
                   </div>
-                  <h3 className="text-base font-bold text-white leading-tight mb-1 line-clamp-1">{program.title}</h3>
-                  {program.description && (
-                    <p className="text-sm text-white/60 line-clamp-1">{program.description}</p>
-                  )}
+                  <h3 className="text-base font-bold text-white leading-tight line-clamp-2">{program.title}</h3>
                 </div>
               </div>
-            ))}
-          </div>
-          {programs.length === 0 && (
-             <div className="text-white/40 py-4 text-sm text-center w-full">Nenhum programa na grade no momento.</div>
+            );
+          })}
+          {items.length === 0 && (
+             <div className="text-white/40 py-4 text-sm w-full text-center">Nenhum programa na grade para hoje.</div>
           )}
         </div>
-
       </div>
     </div>
   );

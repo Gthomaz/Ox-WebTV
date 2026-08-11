@@ -156,14 +156,14 @@ export function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
               className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-3 transition-colors"
             >
-              Home (Player)
+              Home (TV Ao Vivo)
             </Link>
             <Link 
               href="/grade" 
               onClick={() => setIsMobileMenuOpen(false)}
-              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-3 transition-colors"
+              className="text-lg font-medium text-[#00f0ff] hover:text-white border-b border-white/10 pb-3 transition-colors flex items-center justify-between"
             >
-              Programação do Canal
+              Catálogo VOD (Filmes e Séries) <span className="text-xs bg-[#00f0ff] text-[#051622] px-2 py-1 rounded font-bold">NOVO</span>
             </Link>
             <Link 
               href="/filmes" 
