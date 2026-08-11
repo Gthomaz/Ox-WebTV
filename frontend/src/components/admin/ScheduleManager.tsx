@@ -396,6 +396,7 @@ export default function ScheduleManager() {
               <th className="py-1 px-3 border-r border-white/10">Título do Vídeo</th>
               <th className="py-1 px-3 border-r border-white/10">Duração</th>
               <th className="py-1 px-3 border-r border-white/10 text-center">Cronômetro</th>
+              <th className="py-1 px-3 border-r border-white/10 text-center">Data (Play)</th>
               <th className="py-1 px-3 border-r border-white/10">Horário (Play)</th>
               <th className="py-1 px-3 border-r border-white/10 text-center">Editar</th>
               <th className="py-1 px-3 text-center">Excluir</th>
@@ -405,6 +406,7 @@ export default function ScheduleManager() {
             {items.map((item, index) => {
               const playing = isToday() && currentTimeSeconds >= item.start_time_seconds && currentTimeSeconds < item.start_time_seconds + item.duration_seconds;
               const countdown = playing ? (item.start_time_seconds + item.duration_seconds) - currentTimeSeconds : null;
+              const formattedDate = `${String(selectedDay).padStart(2, '0')}/${String(selectedMonth + 1).padStart(2, '0')}/${selectedYear}`;
               
               return (
               <tr 
@@ -426,6 +428,7 @@ export default function ScheduleManager() {
                 <td className="py-1 px-3 border-r border-white/10 text-center font-mono font-bold text-yellow-400">
                   {playing ? formatTime(countdown!) : '-'}
                 </td>
+                <td className="py-1 px-3 border-r border-white/10 text-center font-mono text-white/60">{formattedDate}</td>
                 <td className="py-1 px-3 border-r border-white/10 font-mono text-[#00f0ff]">{formatTime(item.start_time_seconds)}</td>
                 <td className="py-1 px-3 border-r border-white/10 text-center">
                   <button 
@@ -449,7 +452,7 @@ export default function ScheduleManager() {
             )})}
             {items.length === 0 && (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-white/40 border-x border-white/10">
+                <td colSpan={8} className="py-8 text-center text-white/40 border-x border-white/10">
                   Nenhum programa agendado para esta data.
                 </td>
               </tr>
@@ -461,6 +464,7 @@ export default function ScheduleManager() {
                 <td className="py-1 px-3 border-x border-white/10"></td>
                 <td className="py-1 px-3 border-r border-white/10 text-right uppercase text-xs">Total do Dia:</td>
                 <td className="py-1 px-3 border-r border-white/10">{formatTime(totalDuration)}</td>
+                <td className="py-1 px-3 border-r border-white/10"></td>
                 <td className="py-1 px-3 border-r border-white/10"></td>
                 <td className="py-1 px-3 border-r border-white/10"></td>
                 <td className="py-1 px-3 border-r border-white/10"></td>
