@@ -180,13 +180,7 @@ export function Header() {
             >
               🎲 Surpreenda-me <span className="text-[10px] bg-yellow-500 text-black px-2 py-1 rounded font-bold">ROLETAR FILME</span>
             </button>
-            <Link 
-              href="/#chat" 
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-3 transition-colors"
-            >
-              Chat ao Vivo
-            </Link>
+
             <Link 
               href="/denuncias" 
               onClick={() => setIsMobileMenuOpen(false)}
