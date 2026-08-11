@@ -101,7 +101,7 @@ function WatchPageContent() {
                    <p className="text-white font-bold text-xl mb-2">Vídeo indisponível</p>
                    <p className="text-white/60">A URL deste filme ainda não foi cadastrada no sistema.</p>
                  </div>
-               ) : (
+               ) : typeof movie.video_url === 'string' && movie.video_url.includes('.m3u8') ? (
                  <ReactPlayer
                    url={movie.video_url}
                    width="100%"
@@ -110,9 +110,17 @@ function WatchPageContent() {
                    playing={true}
                    config={{
                      file: {
-                       forceHLS: typeof movie.video_url === 'string' && movie.video_url.includes('.m3u8')
+                       forceHLS: true
                      }
                    }}
+                 />
+               ) : (
+                 <video
+                   src={movie.video_url}
+                   className="w-full h-full object-contain bg-black"
+                   controls
+                   autoPlay
+                   playsInline
                  />
                )}
             </div>
