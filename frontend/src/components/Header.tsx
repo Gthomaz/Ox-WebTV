@@ -165,13 +165,21 @@ export function Header() {
             >
               Catálogo VOD (Filmes e Séries) <span className="text-xs bg-[#00f0ff] text-[#051622] px-2 py-1 rounded font-bold">NOVO</span>
             </Link>
-            <Link 
-              href="/filmes" 
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-3 transition-colors"
+            <button 
+              onClick={async () => {
+                const { data } = await supabase.from('site_carousel_items').select('id');
+                if (data && data.length > 0) {
+                  const randomMovie = data[Math.floor(Math.random() * data.length)];
+                  window.location.href = `/watch/${randomMovie.id}`;
+                } else {
+                  alert('O catálogo VOD está vazio!');
+                }
+                setIsMobileMenuOpen(false);
+              }}
+              className="text-lg font-medium text-white hover:text-[#00f0ff] border-b border-white/10 pb-3 transition-colors text-left flex items-center justify-between"
             >
-              Filmes Sugeridos
-            </Link>
+              🎲 Surpreenda-me <span className="text-[10px] bg-yellow-500 text-black px-2 py-1 rounded font-bold">ROLETAR FILME</span>
+            </button>
             <Link 
               href="/#chat" 
               onClick={() => setIsMobileMenuOpen(false)}
