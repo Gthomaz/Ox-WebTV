@@ -66,41 +66,36 @@ export default function FrontendDepartment() {
     if (!file) return;
 
     setUploadingImage(true);
-    const formData = new FormData();
-    formData.append('file', file); // Optional if the API doesn't use it, but good practice
 
     try {
-      const xhr = new XMLHttpRequest();
-      
-      const uploadPromise = new Promise<string>((resolve, reject) => {
-        xhr.upload.onprogress = (event) => {
-          // can track progress if needed
-        };
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const safeName = file.name.replace(/[^a-zA-Z0-9]/g, '_');
+      const fileName = `banners/${Date.now()}_${safeName}.${fileExt}`;
 
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const response = JSON.parse(xhr.responseText);
-              resolve(response.url);
-            } catch (err) {
-              reject(new Error('Erro ao processar resposta.'));
-            }
-          } else {
-            reject(new Error(`Falha no upload. Status: ${xhr.status}`));
-          }
-        };
+      // Upload to Supabase 'videos' bucket (we reuse it for all assets since it's public)
+      const { data, error } = await supabase.storage
+        .from('videos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-        xhr.onerror = () => reject(new Error('Erro de conexão.'));
+      if (error) {
+        throw error;
+      }
 
-        xhr.open('POST', '/api/upload', true);
-        xhr.setRequestHeader('X-File-Name', encodeURIComponent(file.name));
-        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
-        xhr.send(file);
-      });
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('videos')
+        .getPublicUrl(fileName);
 
-      const url = await uploadPromise;
-      handleChange('home_banner_image', url);
-      alert('Imagem enviada com sucesso! Lembre-se de salvar as alterações.');
+      if (!urlData.publicUrl) {
+        throw new Error('Falha ao obter link público da imagem.');
+      }
+
+      handleChange('home_banner_image', urlData.publicUrl);
+      alert('Imagem enviada com sucesso! Lembre-se de clicar em "Salvar Alterações".');
     } catch (err: any) {
       alert('Erro ao fazer upload da imagem: ' + err.message);
     } finally {
@@ -278,26 +273,26 @@ export default function FrontendDepartment() {
 
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div className="space-y-2">
-                  <label className="text-white/70 text-sm font-bold">Altura do Banner</label>
+                  <label className="text-white/70 text-sm font-bold">Altura do Banner (px)</label>
                   <input 
-                    type="text" 
-                    value={settings.home_banner_height} 
-                    onChange={e => handleChange('home_banner_height', e.target.value)}
+                    type="number" 
+                    value={settings.home_banner_height.replace(/[^0-9]/g, '')} 
+                    onChange={e => handleChange('home_banner_height', `${e.target.value}px`)}
                     className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-[#00f0ff] outline-none"
-                    placeholder="Ex: 300px ou 50vh"
+                    placeholder="Ex: 300"
                   />
-                  <p className="text-xs text-white/40">Exemplos: 200px, 400px, 50vh</p>
+                  <p className="text-xs text-white/40">Exemplo: 300 (sempre em pixels)</p>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-white/70 text-sm font-bold">Largura do Banner</label>
+                  <label className="text-white/70 text-sm font-bold">Largura do Banner (px)</label>
                   <input 
-                    type="text" 
-                    value={settings.home_banner_width} 
-                    onChange={e => handleChange('home_banner_width', e.target.value)}
+                    type="number" 
+                    value={settings.home_banner_width.replace(/[^0-9]/g, '')} 
+                    onChange={e => handleChange('home_banner_width', `${e.target.value}px`)}
                     className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-[#00f0ff] outline-none"
-                    placeholder="Ex: 100% ou 800px"
+                    placeholder="Ex: 1200"
                   />
-                  <p className="text-xs text-white/40">Exemplos: 100%, 80%, 1200px</p>
+                  <p className="text-xs text-white/40">Se colocar 1200, ele não passará da tela do celular.</p>
                 </div>
               </div>
             </div>
