@@ -20,11 +20,13 @@ export default function FrontendDepartment() {
     home_banner_width: '100%',
     fiscalizacao_instructions: '',
     login_welcome_text: '',
-    register_welcome_text: ''
+    register_welcome_text: '',
+    home_banner_active: true
   });
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -45,7 +47,8 @@ export default function FrontendDepartment() {
           home_banner_width: data.home_banner_width || '100%',
           fiscalizacao_instructions: data.fiscalizacao_instructions || '',
           login_welcome_text: data.login_welcome_text || '',
-          register_welcome_text: data.register_welcome_text || ''
+          register_welcome_text: data.register_welcome_text || '',
+          home_banner_active: data.home_banner_active !== false // Defaults to true if null
         });
       }
     } catch (e) {
@@ -56,6 +59,53 @@ export default function FrontendDepartment() {
 
   const handleChange = (field: string, value: string) => {
     setSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append('file', file); // Optional if the API doesn't use it, but good practice
+
+    try {
+      const xhr = new XMLHttpRequest();
+      
+      const uploadPromise = new Promise<string>((resolve, reject) => {
+        xhr.upload.onprogress = (event) => {
+          // can track progress if needed
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              resolve(response.url);
+            } catch (err) {
+              reject(new Error('Erro ao processar resposta.'));
+            }
+          } else {
+            reject(new Error(`Falha no upload. Status: ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Erro de conexão.'));
+
+        xhr.open('POST', '/api/upload', true);
+        xhr.setRequestHeader('X-File-Name', encodeURIComponent(file.name));
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+        xhr.send(file);
+      });
+
+      const url = await uploadPromise;
+      handleChange('home_banner_image', url);
+      alert('Imagem enviada com sucesso! Lembre-se de salvar as alterações.');
+    } catch (err: any) {
+      alert('Erro ao fazer upload da imagem: ' + err.message);
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSaveSettings = async () => {
@@ -160,7 +210,18 @@ export default function FrontendDepartment() {
         {/* TAB 2: Homepage */}
         {activeSubTab === 'home' && (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-white mb-4">Homepage (Página Inicial)</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-white">Homepage (Página Inicial)</h2>
+              <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+                <span className="text-white/80 font-bold text-sm">Exibir Banner na Home:</span>
+                <button
+                  onClick={() => handleChange('home_banner_active', !settings.home_banner_active as any)}
+                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${settings.home_banner_active ? 'bg-green-500' : 'bg-red-500'}`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${settings.home_banner_active ? 'right-1' : 'left-1'}`}></div>
+                </button>
+              </div>
+            </div>
             
             <div className="space-y-4 max-w-3xl">
               <div className="space-y-2">
@@ -184,16 +245,33 @@ export default function FrontendDepartment() {
               </div>
               <div className="space-y-2 pt-4">
                 <label className="text-white/70 text-sm font-bold flex items-center gap-2">
-                  <ImageIcon size={16} /> URL da Imagem de Fundo do Banner (Opcional)
+                  <ImageIcon size={16} /> Imagem de Fundo do Banner (Opcional)
                 </label>
-                <input 
-                  type="url" 
-                  value={settings.home_banner_image} 
-                  onChange={e => handleChange('home_banner_image', e.target.value)}
-                  className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-[#00f0ff] outline-none"
-                  placeholder="https://suaimagem.com/banner.jpg"
-                />
-                <p className="text-xs text-white/40">Se vazio, usaremos o gradiente padrão.</p>
+                <div className="flex flex-col md:flex-row gap-3">
+                  <input 
+                    type="url" 
+                    value={settings.home_banner_image} 
+                    onChange={e => handleChange('home_banner_image', e.target.value)}
+                    className="flex-1 bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:border-[#00f0ff] outline-none"
+                    placeholder="https://suaimagem.com/banner.jpg"
+                  />
+                  <div className="relative">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      disabled={uploadingImage}
+                    />
+                    <button 
+                      className="w-full md:w-auto bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-bold transition-colors whitespace-nowrap flex items-center justify-center gap-2 disabled:opacity-50"
+                      disabled={uploadingImage}
+                    >
+                      <Plus size={18} /> {uploadingImage ? 'Enviando...' : 'Upload de Imagem'}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-white/40">Insira a URL ou faça upload do seu computador. Se vazio, usaremos o gradiente padrão.</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-2">
