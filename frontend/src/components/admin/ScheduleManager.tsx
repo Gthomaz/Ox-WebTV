@@ -26,6 +26,23 @@ export default function ScheduleManager() {
   const [scheduleId, setScheduleId] = useState<number | null>(null);
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [totalDuration, setTotalDuration] = useState(0);
+  const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTimeSeconds(now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds());
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const isToday = () => {
+    const todayDate = new Date();
+    const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
+    return selectedDate === todayStr;
+  };
   
   // VOD Library State
   const [vodMovies, setVodMovies] = useState<any[]>([]);
@@ -378,13 +395,18 @@ export default function ScheduleManager() {
               <th className="py-1 px-3 border-x border-white/10 w-12 text-center">ID</th>
               <th className="py-1 px-3 border-r border-white/10">Título do Vídeo</th>
               <th className="py-1 px-3 border-r border-white/10">Duração</th>
+              <th className="py-1 px-3 border-r border-white/10 text-center">Cronômetro</th>
               <th className="py-1 px-3 border-r border-white/10">Horário (Play)</th>
               <th className="py-1 px-3 border-r border-white/10 text-center">Editar</th>
               <th className="py-1 px-3 text-center">Excluir</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((item, index) => (
+            {items.map((item, index) => {
+              const playing = isToday() && currentTimeSeconds >= item.start_time_seconds && currentTimeSeconds < item.start_time_seconds + item.duration_seconds;
+              const countdown = playing ? (item.start_time_seconds + item.duration_seconds) - currentTimeSeconds : null;
+              
+              return (
               <tr 
                 key={item.id}
                 draggable
@@ -392,7 +414,7 @@ export default function ScheduleManager() {
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDragEnd={handleDragEnd}
                 onDrop={(e) => handleDrop(e, index)}
-                className={`border-b border-white/5 hover:bg-white/10 transition-colors group text-white cursor-grab active:cursor-grabbing ${draggedIndex === index ? 'opacity-50' : ''} ${dragOverIndex === index ? 'bg-white/10 border-t-2 border-t-[#00f0ff]' : ''}`}
+                className={`border-b border-white/5 transition-colors group text-white cursor-grab active:cursor-grabbing ${draggedIndex === index ? 'opacity-50' : ''} ${dragOverIndex === index ? 'bg-white/10 border-t-2 border-t-[#00f0ff]' : ''} ${playing ? 'bg-[#0e4b77]/40 border-l-4 border-l-[#00f0ff]' : 'hover:bg-white/10'}`}
               >
                 <td className="py-1 px-3 border-x border-white/10 text-center text-[#00f0ff] font-bold">{index + 1}</td>
                 <td className="py-1 px-3 border-r border-white/10 font-medium truncate max-w-[200px]" title={item.title}>{item.title}</td>
@@ -400,6 +422,9 @@ export default function ScheduleManager() {
                   {item.duration_seconds >= 60 
                     ? `${Math.floor(item.duration_seconds / 60)}m ${item.duration_seconds % 60 > 0 ? (item.duration_seconds % 60) + 's' : ''}`
                     : `${item.duration_seconds} seg`}
+                </td>
+                <td className="py-1 px-3 border-r border-white/10 text-center font-mono font-bold text-yellow-400">
+                  {playing ? formatTime(countdown!) : '-'}
                 </td>
                 <td className="py-1 px-3 border-r border-white/10 font-mono text-[#00f0ff]">{formatTime(item.start_time_seconds)}</td>
                 <td className="py-1 px-3 border-r border-white/10 text-center">
@@ -421,10 +446,10 @@ export default function ScheduleManager() {
                   </button>
                 </td>
               </tr>
-            ))}
+            )})}
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-white/40 border-x border-white/10">
+                <td colSpan={7} className="py-8 text-center text-white/40 border-x border-white/10">
                   Nenhum programa agendado para esta data.
                 </td>
               </tr>
@@ -436,6 +461,7 @@ export default function ScheduleManager() {
                 <td className="py-1 px-3 border-x border-white/10"></td>
                 <td className="py-1 px-3 border-r border-white/10 text-right uppercase text-xs">Total do Dia:</td>
                 <td className="py-1 px-3 border-r border-white/10">{formatTime(totalDuration)}</td>
+                <td className="py-1 px-3 border-r border-white/10"></td>
                 <td className="py-1 px-3 border-r border-white/10"></td>
                 <td className="py-1 px-3 border-r border-white/10"></td>
                 <td className="py-1 px-3"></td>
