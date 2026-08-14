@@ -67,8 +67,17 @@ export default function ScheduleUploader({ onUploadComplete }: ScheduleUploaderP
     setErrorMsg('');
 
     try {
-      // 2. Upload to Next.js API (Local Disk) com XMLHttpRequest para barra de progresso real
-      const publicUrl = await new Promise<string>((resolve, reject) => {
+      // 1. Obter URL pre-assinada
+      const presignRes = await fetch('/api/r2-presign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type || 'video/mp4' })
+      });
+      if (!presignRes.ok) throw new Error('Erro ao obter autorização de upload (R2)');
+      const { signedUrl, publicUrl } = await presignRes.json();
+
+      // 2. Fazer upload direto para o Cloudflare R2 usando XMLHttpRequest para ter barra de progresso
+      await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         
         xhr.upload.addEventListener('progress', (event) => {
@@ -80,31 +89,18 @@ export default function ScheduleUploader({ onUploadComplete }: ScheduleUploaderP
 
         xhr.addEventListener('load', () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const response = JSON.parse(xhr.responseText);
-              resolve(response.url);
-            } catch (e) {
-              reject(new Error('Erro ao processar resposta do servidor.'));
-            }
+            resolve();
           } else {
-            try {
-              const errorData = JSON.parse(xhr.responseText);
-              reject(new Error(errorData.error || 'Falha no upload.'));
-            } catch (e) {
-              reject(new Error(`Falha no upload. Status: ${xhr.status}`));
-            }
+            reject(new Error(`Falha no upload direto para CDN. Status: ${xhr.status}`));
           }
         });
 
         xhr.addEventListener('error', () => {
-          reject(new Error('Erro de conexão ao fazer upload. A Cloudflare pode ter bloqueado ou a internet caiu.'));
+          reject(new Error('Erro de conexão ao enviar para a CDN da Cloudflare.'));
         });
 
-        xhr.open('POST', '/api/upload', true);
-        xhr.setRequestHeader('X-File-Name', encodeURIComponent(file.name));
-        // Para arquivos cruzeiros, o content-type deve ser omitido para o navegador colocar as bounderies, 
-        // mas como estamos lendo direto o req como stream no Next.js, setamos o header.
-        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+        xhr.open('PUT', signedUrl, true);
+        xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
         xhr.send(file);
       });
       setProgress(80);
