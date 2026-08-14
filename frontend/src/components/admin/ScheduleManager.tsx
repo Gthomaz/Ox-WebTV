@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Calendar as CalendarIcon, Clock, Plus, Trash2, Edit2, Save, Tv, AlertTriangle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import ScheduleUploader from './ScheduleUploader';
-import ScheduleUrlAdder from './ScheduleUrlAdder';
 
 interface ScheduleItem {
   id: number;
@@ -52,6 +51,7 @@ export default function ScheduleManager() {
 
   const [newTitle, setNewTitle] = useState('');
   const [newUrl, setNewUrl] = useState('');
+  const [newThumbnailUrl, setNewThumbnailUrl] = useState('');
   const [newDuration, setNewDuration] = useState(''); 
   const [durationType, setDurationType] = useState<'minutes' | 'seconds'>('minutes');
   const [newStartTime, setNewStartTime] = useState('');
@@ -110,7 +110,7 @@ export default function ScheduleManager() {
     });
   };
 
-  const processAddition = async (title: string, url: string, durationSec: number, startTimeStr: string) => {
+  const processAddition = async (title: string, url: string, durationSec: number, startTimeStr: string, thumbnailUrl: string = '') => {
     let currentScheduleId = scheduleId;
     let scheduleData = null;
 
@@ -158,6 +158,7 @@ export default function ScheduleManager() {
         daily_schedule_id: currentScheduleId,
         title: title,
         video_url: url,
+        thumbnail_url: thumbnailUrl,
         duration_seconds: durationSec,
         start_time_seconds: startTime,
         sort_order: 0
@@ -179,9 +180,10 @@ export default function ScheduleManager() {
     const durationSec = durationType === 'minutes' ? durationValue * 60 : durationValue;
 
     try {
-      await processAddition(newTitle, newUrl, durationSec, newStartTime);
+      await processAddition(newTitle, newUrl, durationSec, newStartTime, newThumbnailUrl);
       setNewTitle('');
       setNewUrl('');
+      setNewThumbnailUrl('');
       setNewDuration('');
       setNewStartTime('');
       fetchScheduleForDate(selectedDate);
@@ -190,9 +192,9 @@ export default function ScheduleManager() {
     }
   };
 
-  const handleAddFromUpload = async (title: string, url: string, durationSec: number, startTimeStr: string) => {
+  const handleAddFromUpload = async (title: string, url: string, durationSec: number, startTimeStr: string, thumbnailUrl: string = '') => {
     try {
-      await processAddition(title, url, durationSec, startTimeStr);
+      await processAddition(title, url, durationSec, startTimeStr, thumbnailUrl);
       fetchScheduleForDate(selectedDate);
       alert('Upload concluído e adicionado à Grade com sucesso!');
     } catch (err: any) {
@@ -306,6 +308,7 @@ export default function ScheduleManager() {
           const durationSec = m.duration_seconds || m.duracao_segundos || 0;
           const title = m.title || m.titulo || 'Sem Título';
           const url = m.video_url || m.url || '';
+          const thumbnailUrl = m.thumbnail_url || m.capa || '';
 
           const { error: itemError, data: newItem } = await supabase
             .from('schedule_items')
@@ -313,6 +316,7 @@ export default function ScheduleManager() {
               daily_schedule_id: currentScheduleId,
               title: title,
               video_url: url,
+              thumbnail_url: thumbnailUrl,
               duration_seconds: durationSec,
               start_time_seconds: 0,
               sort_order: dropIndex
@@ -609,6 +613,13 @@ export default function ScheduleManager() {
           onChange={e => setNewUrl(e.target.value)}
           className="flex-1 min-w-[150px] bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#00f0ff] outline-none text-sm"
         />
+        <input 
+          type="url" 
+          placeholder="URL da Capa (Opcional)" 
+          value={newThumbnailUrl}
+          onChange={e => setNewThumbnailUrl(e.target.value)}
+          className="flex-1 min-w-[150px] bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#00f0ff] outline-none text-sm"
+        />
         <div className="flex bg-black/50 border border-white/10 rounded-lg overflow-hidden shrink-0">
           <input 
             type="number" 
@@ -709,7 +720,7 @@ export default function ScheduleManager() {
                     </td>
                     <td className="py-1 px-2 border-r border-white/10 text-center">
                       <button
-                        onClick={() => handleAddFromUpload(mTitle, mUrl, mDuration, '')}
+                        onClick={() => handleAddFromUpload(mTitle, mUrl, mDuration, '', movie.thumbnail_url || movie.capa || '')}
                         className="bg-[#00f0ff]/10 text-[#00f0ff] hover:bg-[#00f0ff] hover:text-[#051622] px-2 py-1.5 rounded text-xs font-bold transition-all shadow-[0_0_10px_rgba(0,240,255,0)] hover:shadow-[0_0_15px_rgba(0,240,255,0.4)] whitespace-nowrap"
                       >
                         + GRADE
@@ -748,10 +759,9 @@ export default function ScheduleManager() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <div className="grid grid-cols-1 gap-6 mt-6">
         {/* Upload Component Integrado */}
         <ScheduleUploader onUploadComplete={handleAddFromUpload} />
-        <ScheduleUrlAdder onUploadComplete={handleAddFromUpload} />
       </div>
     </div>
   );

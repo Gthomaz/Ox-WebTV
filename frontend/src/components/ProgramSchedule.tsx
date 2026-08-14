@@ -42,6 +42,8 @@ export function ProgramSchedule() {
     };
   };
 
+  const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
+
   useEffect(() => {
     const fetchTodaySchedule = async () => {
       const { dateStr, secondsSinceMidnight } = getBrasiliaTime();
@@ -78,6 +80,31 @@ export function ProgramSchedule() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    // identify the active item
+    const index = items.findIndex(p => currentSeconds >= p.start_time_seconds && currentSeconds < (p.start_time_seconds + p.duration_seconds));
+    if (index !== -1 && index !== activeItemIndex) {
+      setActiveItemIndex(index);
+    }
+  }, [currentSeconds, items, activeItemIndex]);
+
+  useEffect(() => {
+    if (activeItemIndex !== null && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const targetId = `program-card-${activeItemIndex}`;
+      const activeElement = document.getElementById(targetId);
+      
+      if (activeElement) {
+        const containerCenter = container.clientWidth / 2;
+        const elementCenter = activeElement.offsetLeft + (activeElement.clientWidth / 2);
+        container.scrollTo({
+          left: elementCenter - containerCenter,
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [activeItemIndex]);
+
   const formatTimeStr = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -99,6 +126,7 @@ export function ProgramSchedule() {
 
             return (
               <div 
+                id={`program-card-${idx}`}
                 key={`schedule-${program.id}-${idx}`}
                 className={`w-[240px] flex-shrink-0 rounded-2xl overflow-hidden relative group bg-black transition-all duration-300
                   ${isPlaying ? 'border-2 border-[#00f0ff] shadow-[0_0_15px_rgba(0,240,255,0.4)] transform scale-[1.03] mx-2' : 'border border-white/10 hover:border-white/30'}
