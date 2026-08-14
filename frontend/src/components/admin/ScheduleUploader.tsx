@@ -8,10 +8,7 @@ interface ScheduleUploaderProps {
 
 export default function ScheduleUploader({ onUploadComplete }: ScheduleUploaderProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [title, setTitle] = useState('');
   const [durationSec, setDurationSec] = useState<number>(0);
-  const [category, setCategory] = useState('Podcast');
-  const [startTime, setStartTime] = useState('');
   
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -64,8 +61,6 @@ export default function ScheduleUploader({ onUploadComplete }: ScheduleUploaderP
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return setErrorMsg('Por favor, selecione um arquivo primeiro.');
-    if (!title.trim()) return setErrorMsg('Por favor, insira um título para o vídeo.');
-    if (durationSec <= 0) return setErrorMsg('A duração deve ser maior que zero.');
 
     setUploading(true);
     setProgress(10);
@@ -114,26 +109,27 @@ export default function ScheduleUploader({ onUploadComplete }: ScheduleUploaderP
       });
       setProgress(80);
 
+      const finalTitle = file.name.replace(/\.[^/.]+$/, ""); // Strip extension
+
       // 3. Save to database (filmes) to add to VOD
       const { error: dbError } = await supabase.from('filmes').insert([{
-        title: title,
+        title: finalTitle,
         video_url: publicUrl,
         duration_seconds: durationSec,
         cover_url: 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&q=80&w=1000',
-        category: category,
+        category: 'Outros',
       }]);
 
       if (dbError) throw dbError;
       setProgress(100);
 
-      // 4. Trigger callback to add to Schedule
-      onUploadComplete(title, publicUrl, durationSec, startTime);
+      // Trigger callback to refresh VOD list instead of adding to schedule
+      // We pass empty strings to tell the parent it's just a VOD refresh if we don't want to change the prop type yet
+      onUploadComplete(finalTitle, publicUrl, durationSec, 'VOD_ONLY');
 
       // Reset form
       setFile(null);
-      setTitle('');
       setDurationSec(0);
-      setStartTime('');
       if (fileInputRef.current) fileInputRef.current.value = '';
 
     } catch (err: any) {
@@ -159,59 +155,7 @@ export default function ScheduleUploader({ onUploadComplete }: ScheduleUploaderP
       )}
 
       <form onSubmit={handleUpload} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <select 
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-[#00f0ff] outline-none"
-            >
-              <option value="Podcast">Podcast</option>
-              <option value="Filme">Filme</option>
-              <option value="Série">Série</option>
-              <option value="Documentário">Documentário</option>
-              <option value="Esportes">Esportes</option>
-              <option value="Jornalismo">Jornalismo</option>
-              <option value="Musical">Musical</option>
-              <option value="Propaganda">Propaganda</option>
-              <option value="Infantil">Infantil</option>
-              <option value="Outros">Outros</option>
-            </select>
-          </div>
-          <div>
-            <input 
-              type="text" 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Título do Vídeo"
-              required
-              className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-[#00f0ff] outline-none"
-            />
-          </div>
-          <div>
-            <div className="relative">
-              <input 
-                type="number" 
-                value={durationSec || ''}
-                onChange={(e) => setDurationSec(parseInt(e.target.value) || 0)}
-                placeholder="Duração"
-                required min="1"
-                className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 pr-16 text-white text-sm focus:border-[#00f0ff] outline-none"
-              />
-              <span className="absolute right-3 top-2.5 text-xs text-white/40">segundos</span>
-            </div>
-          </div>
-          <div>
-            <input 
-              type="time" 
-              step="1"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-[#00f0ff] outline-none"
-              title="Deixe vazio para tocar logo após o último vídeo"
-            />
-          </div>
-        </div>
+
 
         <div 
           onDragOver={(e) => e.preventDefault()}
@@ -249,10 +193,10 @@ export default function ScheduleUploader({ onUploadComplete }: ScheduleUploaderP
           className={`w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm transition-all ${
             uploading || !file 
               ? 'bg-white/5 text-white/30 cursor-not-allowed' 
-              : 'bg-[#00f0ff] text-[#051622] hover:bg-[#00d0dd]'
+              : 'bg-[#10b981] text-white hover:bg-[#059669]'
           }`}
         >
-          {uploading ? 'Processando Upload...' : 'Fazer Upload e Adicionar à Grade Diária'}
+          {uploading ? 'Processando Upload...' : 'Adicionar à Biblioteca VOD'}
         </button>
       </form>
     </div>

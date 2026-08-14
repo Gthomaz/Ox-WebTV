@@ -193,6 +193,12 @@ export default function ScheduleManager() {
   };
 
   const handleAddFromUpload = async (title: string, url: string, durationSec: number, startTimeStr: string, thumbnailUrl: string = '') => {
+    if (startTimeStr === 'VOD_ONLY') {
+      fetchVodMovies();
+      alert('Upload concluído! O vídeo foi adicionado à Biblioteca VOD com sucesso.');
+      return;
+    }
+
     try {
       await processAddition(title, url, durationSec, startTimeStr, thumbnailUrl);
       fetchScheduleForDate(selectedDate);
