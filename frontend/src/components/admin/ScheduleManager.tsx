@@ -158,7 +158,6 @@ export default function ScheduleManager() {
         daily_schedule_id: currentScheduleId,
         title: title,
         video_url: url,
-        thumbnail_url: thumbnailUrl,
         duration_seconds: durationSec,
         start_time_seconds: startTime,
         sort_order: 0
@@ -322,7 +321,6 @@ export default function ScheduleManager() {
               daily_schedule_id: currentScheduleId,
               title: title,
               video_url: url,
-              thumbnail_url: thumbnailUrl,
               duration_seconds: durationSec,
               start_time_seconds: 0,
               sort_order: dropIndex
