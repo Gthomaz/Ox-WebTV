@@ -160,7 +160,7 @@ export default function DenunciasDepartment() {
           <div>
             <h1 className="text-3xl font-extrabold text-[#0D3B66] flex items-center gap-3">
               <BarChart3 className="w-8 h-8 text-blue-500" />
-              QG de Fiscalização - Helder Araújo
+              QG de Fiscalização
             </h1>
             <p className="text-gray-500 mt-2 font-medium">Controle Total de Denúncias da Cidade</p>
           </div>
