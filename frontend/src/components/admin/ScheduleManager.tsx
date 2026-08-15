@@ -141,6 +141,8 @@ export default function ScheduleManager() {
     } else {
       if (itemsList.length > 0) {
         startTime = Math.max(...itemsList.map(i => i.start_time_seconds + i.duration_seconds));
+      } else {
+        startTime = isToday() ? currentTimeSeconds : 0;
       }
     }
 
@@ -259,12 +261,30 @@ export default function ScheduleManager() {
   const handleRemoveItem = async (itemId: number, itemDuration: number) => {
     await supabase.from('schedule_items').delete().eq('id', itemId);
     
-    const newItems = items.filter(i => i.id !== itemId);
-    const newTotal = newItems.reduce((acc, curr) => acc + curr.duration_seconds, 0);
+    const remainingItems = items.filter(i => i.id !== itemId);
+    
+    if (remainingItems.length === 0) {
+      await supabase.from('daily_schedule').update({ total_duration_seconds: 0 }).eq('id', scheduleId);
+      fetchScheduleForDate(selectedDate);
+      return;
+    }
 
-    await supabase.from('daily_schedule')
-      .update({ total_duration_seconds: newTotal })
-      .eq('id', scheduleId);
+    let currentStartTime = items.length > 0 ? items[0].start_time_seconds : 0;
+    const updates = remainingItems.map((item, i) => {
+      const updatedItem = { ...item, start_time_seconds: currentStartTime, sort_order: i };
+      currentStartTime += item.duration_seconds;
+      return updatedItem;
+    });
+
+    for (const item of updates) {
+      await supabase.from('schedule_items').update({ 
+        start_time_seconds: item.start_time_seconds,
+        sort_order: item.sort_order 
+      }).eq('id', item.id);
+    }
+
+    const newTotal = updates.reduce((acc, curr) => acc + curr.duration_seconds, 0);
+    await supabase.from('daily_schedule').update({ total_duration_seconds: newTotal }).eq('id', scheduleId);
 
     fetchScheduleForDate(selectedDate);
   };
@@ -331,7 +351,7 @@ export default function ScheduleManager() {
           const newItems = [...items];
           newItems.splice(dropIndex, 0, newItem);
 
-          let currentStartTime = 0;
+          let currentStartTime = items.length > 0 ? items[0].start_time_seconds : (isToday() ? currentTimeSeconds : 0);
           const updates = newItems.map((item, i) => {
             const updatedItem = {
               ...item,
@@ -372,7 +392,7 @@ export default function ScheduleManager() {
     newItems.splice(dropIndex, 0, removed);
 
     // Recalculate start times linearly for the whole list to maintain proper loop sequence
-    let currentStartTime = 0;
+    let currentStartTime = items.length > 0 ? items[0].start_time_seconds : (isToday() ? currentTimeSeconds : 0);
     const updates = newItems.map((item, i) => {
       const updatedItem = {
         ...item,
